@@ -1,0 +1,110 @@
+{
+  "fixture_kind": "test_rules_not_gameplay",
+  "decision_at": "2026-01-01T12:00:03Z",
+  "registry": {
+    "schema_version": "1.0",
+    "game_build": "synthetic-build-1",
+    "rules_version": "test-rules-1",
+    "domain": "test_rules_not_gameplay",
+    "ban_semantics_verified": true,
+    "rules": [
+      {
+        "rule_id": "test_blocked",
+        "operation": "test_blocked_route",
+        "verification": "verified",
+        "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:blocked"},
+        "phases": ["test_preparation"],
+        "requirements": [{"path": "self.blocked_benefit", "operator": "known"}],
+        "score_terms": [{"path": "self.blocked_benefit", "weight": 1, "definition": "Artificial high score used to challenge the hard ban filter."}],
+        "expected_results": ["Synthetic route would be selected; no game effect is asserted."],
+        "ban_tags": ["test:blocked"]
+      },
+      {
+        "rule_id": "test_develop",
+        "operation": "test_develop_composition",
+        "verification": "verified",
+        "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:develop"},
+        "phases": ["test_preparation"],
+        "requirements": [{"path": "self.free_slots", "operator": "ge", "value": 1}],
+        "resource_costs": [{"path": "self.credits", "amount": 3}],
+        "score_terms": [{"path": "self.benefit", "weight": 1, "definition": "Manually supplied synthetic marginal composition benefit, in arbitrary points."}],
+        "expected_results": ["Synthetic credits decrease by 3 and free_slots by 1; this prototype does not apply that transition."],
+        "ban_tags": ["test:develop"]
+      },
+      {
+        "rule_id": "test_conserve",
+        "operation": "test_conserve_resource",
+        "verification": "verified",
+        "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:conserve"},
+        "phases": ["test_preparation"],
+        "requirements": [{"path": "self.credits", "operator": "ge", "value": 0}],
+        "score_terms": [{"path": "self.flexibility", "weight": 1, "definition": "Manually supplied synthetic resource flexibility, with no assumed interest breakpoint."}],
+        "expected_results": ["Synthetic credits remain unchanged."],
+        "ban_tags": ["test:conserve"]
+      },
+      {
+        "rule_id": "test_review_opponent",
+        "operation": "test_review_observed_opponent",
+        "verification": "verified",
+        "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:opponent"},
+        "phases": ["test_preparation"],
+        "requirements": [{"path": "opponent.board_signal", "operator": "known"}],
+        "score_terms": [{"path": "opponent.board_signal", "weight": 1, "definition": "Artificial opponent signal for identity-specific evidence checks; not combat strength."}],
+        "expected_results": ["Request human review of this identified synthetic opponent; this does not choose a game matchup."],
+        "targets_opponent": true
+      }
+    ]
+  },
+  "observations": [
+    {
+      "schema_version": "1.0", "event_id": "start", "match_id": "synthetic-match-a", "kind": "match_start",
+      "observed_at": "2026-01-01T12:00:00Z", "ingested_at": "2026-01-01T12:00:00Z",
+      "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:start"},
+      "round": 1, "phase": "test_preparation", "context_confidence": 0.95,
+      "game_build": "synthetic-build-1", "rules_version": "test-rules-1"
+    },
+    {
+      "schema_version": "1.0", "event_id": "bans", "match_id": "synthetic-match-a", "kind": "bans",
+      "observed_at": "2026-01-01T12:00:01Z", "ingested_at": "2026-01-01T12:00:01Z",
+      "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:bans"},
+      "round": 1, "phase": "test_preparation",
+      "fields": [{"key": "banned_tags", "status": "observed", "value": ["test:blocked"], "confidence": 0.95}]
+    },
+    {
+      "schema_version": "1.0", "event_id": "own-state", "match_id": "synthetic-match-a", "kind": "state",
+      "observed_at": "2026-01-01T12:00:02Z", "ingested_at": "2026-01-01T12:00:02Z",
+      "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:self"},
+      "round": 1, "phase": "test_preparation", "context_confidence": 0.95,
+      "fields": [
+        {"key": "credits", "status": "observed", "value": 4, "confidence": 0.95},
+        {"key": "free_slots", "status": "observed", "value": 1, "confidence": 0.95},
+        {"key": "benefit", "status": "observed", "value": 3, "confidence": 0.95},
+        {"key": "blocked_benefit", "status": "observed", "value": 1000, "confidence": 0.95},
+        {"key": "flexibility", "status": "observed", "value": 2, "confidence": 0.95},
+        {"key": "composition_roles", "status": "observed", "value": ["test:role-a"], "confidence": 0.95}
+      ]
+    },
+    {
+      "schema_version": "1.0", "event_id": "opponent-a", "match_id": "synthetic-match-a", "kind": "opponent",
+      "observed_at": "2026-01-01T12:00:02Z", "ingested_at": "2026-01-01T12:00:02Z",
+      "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:opponent-a"},
+      "round": 1, "phase": "test_preparation", "opponent_id": "slot-a", "coverage": "partial",
+      "fields": [
+        {"key": "board_signal", "status": "observed", "value": 1, "confidence": 0.95},
+        {"key": "display_name", "status": "observed", "value": "Same synthetic name", "confidence": 0.95},
+        {"key": "unit_ids", "status": "observed", "value": ["test:unit-a"], "confidence": 0.95}
+      ]
+    },
+    {
+      "schema_version": "1.0", "event_id": "opponent-b", "match_id": "synthetic-match-a", "kind": "opponent",
+      "observed_at": "2026-01-01T12:00:02Z", "ingested_at": "2026-01-01T12:00:02Z",
+      "source": {"kind": "synthetic", "reference": "test_rules_not_gameplay:opponent-b"},
+      "round": 1, "phase": "test_preparation", "opponent_id": "slot-b", "coverage": "partial",
+      "fields": [
+        {"key": "board_signal", "status": "observed", "value": 2, "confidence": 0.95},
+        {"key": "display_name", "status": "observed", "value": "Same synthetic name", "confidence": 0.95},
+        {"key": "unit_ids", "status": "observed", "value": ["test:unit-b"], "confidence": 0.95}
+      ]
+    }
+  ]
+}

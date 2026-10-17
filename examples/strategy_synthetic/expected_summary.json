@@ -1,0 +1,44 @@
+{
+  "fixture_kind": "test_rules_not_gameplay",
+  "execution_allowed": false,
+  "selected_rule": "test_develop",
+  "evaluations": [
+    {
+      "rule_id": "test_blocked",
+      "opponent_id": null,
+      "accepted": false,
+      "score": null,
+      "reasons": [
+        "confirmed_ban"
+      ]
+    },
+    {
+      "rule_id": "test_conserve",
+      "opponent_id": null,
+      "accepted": true,
+      "score": 2.0,
+      "reasons": []
+    },
+    {
+      "rule_id": "test_develop",
+      "opponent_id": null,
+      "accepted": true,
+      "score": 3.0,
+      "reasons": []
+    },
+    {
+      "rule_id": "test_review_opponent",
+      "opponent_id": "slot-a",
+      "accepted": true,
+      "score": 1.0,
+      "reasons": []
+    },
+    {
+      "rule_id": "test_review_opponent",
+      "opponent_id": "slot-b",
+      "accepted": true,
+      "score": 2.0,
+      "reasons": []
+    }
+  ]
+}
