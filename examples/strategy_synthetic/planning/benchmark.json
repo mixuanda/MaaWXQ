@@ -1,0 +1,95 @@
+{
+  "schema_version": "synthetic-planning-benchmark/1",
+  "domain": "test_rules_not_gameplay",
+  "decision_at": "2026-01-01T12:00:00Z",
+  "declared_transition_rules": [
+    "Each toy unit ID is unique across board, hand and offers.",
+    "Buy removes an actual offer, pays its fixed declared credits and puts the unit in a free hand slot.",
+    "Deploy moves an actual hand unit into a free board slot.",
+    "Replace discards one actual board unit and deploys one hand unit without payment or sale return.",
+    "Hold preserves the current position. No selling, refresh, combat, future draw or copying exists in this toy.",
+    "Bans forbid buying, deploying or replacing with a unit bearing the banned ID/tag. They do not force removal of existing units.",
+    "Utility is the sum of isolated board values and all active declared pair/higher-order interaction values. Credits and undeployed hand units have no terminal utility here.",
+    "A declared toy opponent counter can disable a named interaction. Unknown probabilities are not assigned. Multiple scenarios use worst-case utility."
+  ],
+  "split_manifest": {
+    "training_families": ["train-pair-alpha", "train-pair-beta", "train-higher-order"],
+    "heldout_family": "heldout-ac-composition",
+    "split_frozen_before_fitting": true,
+    "normalization_fit": "training_families_only",
+    "heldout_cases_share_one_family": true
+  },
+  "training_settings": {"seed": 7, "epochs": 300, "learning_rate": 0.04},
+  "training_families": [
+    {
+      "family_id": "train-pair-alpha", "capacity": 2,
+      "world": {
+        "schema_version": "toy-planning-world/1", "domain": "test_rules_not_gameplay",
+        "version": "train-alpha-1", "verification": "declared_synthetic",
+        "cards": [
+          {"card_id": "alpha-support", "isolated_value": 2, "price": 0},
+          {"card_id": "alpha-isolated", "isolated_value": 7, "price": 2},
+          {"card_id": "alpha-link", "isolated_value": 1, "price": 1}
+        ],
+        "interactions": [{"interaction_id": "alpha-pair", "requires": ["alpha-support", "alpha-link"], "value": 7}]
+      }
+    },
+    {
+      "family_id": "train-pair-beta", "capacity": 2,
+      "world": {
+        "schema_version": "toy-planning-world/1", "domain": "test_rules_not_gameplay",
+        "version": "train-beta-1", "verification": "declared_synthetic",
+        "cards": [
+          {"card_id": "beta-support", "isolated_value": 3, "price": 0},
+          {"card_id": "beta-isolated", "isolated_value": 8, "price": 2},
+          {"card_id": "beta-link", "isolated_value": 1, "price": 1}
+        ],
+        "interactions": [{"interaction_id": "beta-pair", "requires": ["beta-support", "beta-link"], "value": 9}]
+      }
+    },
+    {
+      "family_id": "train-higher-order", "capacity": 3,
+      "world": {
+        "schema_version": "toy-planning-world/1", "domain": "test_rules_not_gameplay",
+        "version": "train-higher-1", "verification": "declared_synthetic",
+        "cards": [
+          {"card_id": "higher-a", "isolated_value": 1, "price": 0},
+          {"card_id": "higher-b", "isolated_value": 4, "price": 2},
+          {"card_id": "higher-c", "isolated_value": 2, "price": 1},
+          {"card_id": "higher-d", "isolated_value": 5, "price": 1}
+        ],
+        "interactions": [
+          {"interaction_id": "higher-pair", "requires": ["higher-a", "higher-c"], "value": 3},
+          {"interaction_id": "higher-triple", "requires": ["higher-a", "higher-c", "higher-d"], "value": 8}
+        ]
+      }
+    }
+  ],
+  "heldout_world": {
+    "schema_version": "toy-planning-world/1", "domain": "test_rules_not_gameplay",
+    "version": "heldout-composition-1", "verification": "declared_synthetic",
+    "cards": [
+      {"card_id": "A", "isolated_value": 1, "price": 0, "roles": ["toy-support"]},
+      {"card_id": "B", "isolated_value": 6, "price": 2, "roles": ["toy-carry"]},
+      {"card_id": "C", "isolated_value": 2, "price": 1, "roles": ["toy-carry"]},
+      {"card_id": "D", "isolated_value": 5, "price": 1, "roles": ["toy-utility"]}
+    ],
+    "interactions": [
+      {"interaction_id": "link-ac", "requires": ["A", "C"], "value": 8},
+      {"interaction_id": "triple-acd", "requires": ["A", "C", "D"], "value": 4}
+    ]
+  },
+  "cases": [
+    {"case_id": "pair_synergy", "position": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2}},
+    {"case_id": "without_support", "position": {"board_ids": [], "offer_ids": ["B", "C"], "credits": 2}},
+    {"case_id": "banned_c", "position": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2, "bans": ["C"]}},
+    {"case_id": "no_energy", "position": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 0}},
+    {"case_id": "opponent_counter", "position": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2},
+     "scenarios": [{"scenario_id": "toy_counter", "disabled_interactions": ["link-ac"]}]},
+    {"case_id": "plausible_opponent_counter", "position": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2},
+     "scenarios": [{"scenario_id": "toy_normal"}, {"scenario_id": "toy_counter", "disabled_interactions": ["link-ac"]}]},
+    {"case_id": "replacement_breaks_link", "position": {"board_ids": ["A", "C"], "hand_ids": ["D"], "offer_ids": [], "credits": 0}},
+    {"case_id": "higher_order", "position": {"board_ids": ["A", "D"], "offer_ids": ["C"], "credits": 1, "capacity": 3}},
+    {"case_id": "unknown_resource", "position": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2, "unknown": ["credits"]}}
+  ]
+}

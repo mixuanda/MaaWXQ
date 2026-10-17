@@ -1,0 +1,2804 @@
+{
+  "schema_version": "synthetic-planning-report/1",
+  "domain": "test_rules_not_gameplay",
+  "execution_allowed": false,
+  "training_executed": true,
+  "label_origin": "declared_synthetic_formation_utility_not_expert_or_game_results",
+  "real_labeled_decisions": 0,
+  "real_match_results": 0,
+  "split_manifest": {
+    "training_families": [
+      "train-pair-alpha",
+      "train-pair-beta",
+      "train-higher-order"
+    ],
+    "heldout_family": "heldout-ac-composition",
+    "split_frozen_before_fitting": true,
+    "normalization_fit": "training_families_only",
+    "heldout_cases_share_one_family": true
+  },
+  "related_contrast_cases_are_not_independent_matches": true,
+  "feature_semantics": "Declared pair/higher-order interactions are supplied to the model; it does not discover game rules.",
+  "training": {
+    "settings": {
+      "seed": 7,
+      "epochs": 300,
+      "learning_rate": 0.04
+    },
+    "feature_version": "toy-composition-features/1",
+    "feature_order": [
+      "isolated_value",
+      "pair_interaction_value",
+      "higher_order_interaction_value"
+    ],
+    "cpu_seconds_for_both_fits": 0.09375,
+    "wall_seconds_for_both_fits": 0.08384429995203391,
+    "interaction_fit": {
+      "model": {
+        "weights": [
+          13.435098577226436,
+          11.146151893177606,
+          3.0062333035858937
+        ],
+        "scales": [
+          11,
+          9,
+          8
+        ],
+        "trained_family_ids": [
+          "train-pair-alpha",
+          "train-pair-beta",
+          "train-higher-order"
+        ],
+        "training_digest": "c4ea639da7eb7bc2491dc4e73329c9085239e96f4f3d53f71d1168b36c418c31",
+        "include_interactions": true,
+        "seed": 7,
+        "epochs": 300,
+        "schema_version": "synthetic-pairwise-ranker/1",
+        "version": "cpu-pairwise-logistic/1",
+        "domain": "test_rules_not_gameplay",
+        "feature_version": "toy-composition-features/1",
+        "score_kind": "uncalibrated_learned_rank_score_not_utility_or_probability",
+        "label_origin": "declared_synthetic_utility"
+      },
+      "pairs": 142,
+      "initial_loss": 0.6931471805599463,
+      "final_loss": 0.05588162512501162,
+      "skipped_ties": 5
+    },
+    "ablation_fit": {
+      "model": {
+        "weights": [
+          6.136877029859981,
+          0.0,
+          0.0
+        ],
+        "scales": [
+          11,
+          9,
+          8
+        ],
+        "trained_family_ids": [
+          "train-pair-alpha",
+          "train-pair-beta",
+          "train-higher-order"
+        ],
+        "training_digest": "c4ea639da7eb7bc2491dc4e73329c9085239e96f4f3d53f71d1168b36c418c31",
+        "include_interactions": false,
+        "seed": 7,
+        "epochs": 300,
+        "schema_version": "synthetic-pairwise-ranker/1",
+        "version": "cpu-pairwise-logistic/1",
+        "domain": "test_rules_not_gameplay",
+        "feature_version": "toy-composition-features/1",
+        "score_kind": "uncalibrated_learned_rank_score_not_utility_or_probability",
+        "label_origin": "declared_synthetic_utility"
+      },
+      "pairs": 142,
+      "initial_loss": 0.6931471805599463,
+      "final_loss": 0.35179383353906374,
+      "skipped_ties": 5
+    }
+  },
+  "latency": {
+    "independent_card_baseline": {
+      "samples": 27,
+      "p50_ms": 28.986599994823337,
+      "p95_ms": 47.82929999055341
+    },
+    "interaction_depth_one": {
+      "samples": 27,
+      "p50_ms": 14.496599964331836,
+      "p95_ms": 18.864099984057248
+    },
+    "interaction_depth_two": {
+      "samples": 27,
+      "p50_ms": 29.56080000149086,
+      "p95_ms": 45.724600029643625
+    },
+    "cpu_ranker_depth_two": {
+      "samples": 27,
+      "p50_ms": 30.77170002507046,
+      "p95_ms": 47.44800005573779
+    },
+    "ranker_without_interactions": {
+      "samples": 27,
+      "p50_ms": 31.141200044658035,
+      "p95_ms": 48.67819999344647
+    }
+  },
+  "quality": {
+    "independent_card_baseline": {
+      "supported_contrasts": 8,
+      "abstentions": 1,
+      "fallbacks": 0,
+      "mean_synthetic_utility_regret": 1
+    },
+    "interaction_depth_one": {
+      "supported_contrasts": 8,
+      "abstentions": 1,
+      "fallbacks": 0,
+      "mean_synthetic_utility_regret": 6
+    },
+    "interaction_depth_two": {
+      "supported_contrasts": 8,
+      "abstentions": 1,
+      "fallbacks": 0,
+      "mean_synthetic_utility_regret": 0
+    },
+    "cpu_ranker_depth_two": {
+      "supported_contrasts": 8,
+      "abstentions": 1,
+      "fallbacks": 0,
+      "mean_synthetic_utility_regret": 0
+    },
+    "ranker_without_interactions": {
+      "supported_contrasts": 8,
+      "abstentions": 1,
+      "fallbacks": 0,
+      "mean_synthetic_utility_regret": 1
+    }
+  },
+  "cases": [
+    {
+      "case_id": "pair_synergy",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 4
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 2
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 10
+        },
+        "interaction_depth_two": {
+          "selected": "buy:C",
+          "status": "recommend",
+          "path": [
+            "buy:C",
+            "deploy:C"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 11,
+          "formation": [
+            "A",
+            "C"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 11,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3
+                  ],
+                  [
+                    "pair_interaction_value",
+                    8
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 11,
+                "isolated_value": 3,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 10
+              }
+            ],
+            "interactions_gained": [
+              "link-ac"
+            ],
+            "interactions_lost": [],
+            "remaining_credits": 1
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "buy:C",
+          "status": "recommend",
+          "path": [
+            "buy:C",
+            "deploy:C"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 11,
+          "formation": [
+            "A",
+            "C"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 13.571808365502456,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.664117793789028
+                  ],
+                  [
+                    "pair_interaction_value",
+                    9.907690571713427
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 11,
+                "isolated_value": 3,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 10
+              }
+            ],
+            "interactions_gained": [
+              "link-ac"
+            ],
+            "interactions_lost": [],
+            "remaining_credits": 1
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 3.9052853826381697,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.9052853826381697
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 4
+        }
+      }
+    },
+    {
+      "case_id": "without_support",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 6,
+          "formation": [
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 6,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    6
+                  ]
+                ],
+                "declared_toy_utility": 6,
+                "isolated_value": 6,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 0,
+          "formation": [],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 0,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    0
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 0,
+                "isolated_value": 0,
+                "active_interactions": [],
+                "roles": [],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 2
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 6
+        },
+        "interaction_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 6,
+          "formation": [
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 6,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    6
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 6,
+                "isolated_value": 6,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 6,
+          "formation": [
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 7.328235587578056,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7.328235587578056
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0.0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 6,
+                "isolated_value": 6,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 6,
+          "formation": [
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 3.347387470832717,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.347387470832717
+                  ]
+                ],
+                "declared_toy_utility": 6,
+                "isolated_value": 6,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        }
+      }
+    },
+    {
+      "case_id": "banned_c",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 3,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:C",
+              [
+                "confirmed_ban"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "buy:B",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 1,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 2
+          },
+          "hard_rejections": [
+            [
+              "buy:C",
+              [
+                "confirmed_ban"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "buy:B",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 6
+        },
+        "interaction_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 3,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:C",
+              [
+                "confirmed_ban"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "buy:B",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 3,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 8.549608185507731,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    8.549608185507731
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0.0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:C",
+              [
+                "confirmed_ban"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "buy:B",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 3,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 3.9052853826381697,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.9052853826381697
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:C",
+              [
+                "confirmed_ban"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "buy:B",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        }
+      }
+    },
+    {
+      "case_id": "no_energy",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 0,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:B",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ],
+            [
+              "buy:C",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 0,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:B",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ],
+            [
+              "buy:C",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_two": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 0,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:B",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ],
+            [
+              "buy:C",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 0,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 1.221372597929676,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1.221372597929676
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0.0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:B",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ],
+            [
+              "buy:C",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 0,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 0.5578979118054529,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    0.5578979118054529
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "buy:B",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ],
+            [
+              "buy:C",
+              [
+                "resource_or_capacity_limit:self.credits"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        }
+      }
+    },
+    {
+      "case_id": "opponent_counter",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 2
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 6
+        },
+        "interaction_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 8.549608185507731,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    8.549608185507731
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0.0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 3.9052853826381697,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.9052853826381697
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        }
+      }
+    },
+    {
+      "case_id": "plausible_opponent_counter",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_normal",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              },
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 1,
+          "formation": [
+            "A"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_normal",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              },
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 1,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    1
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 1,
+                "isolated_value": 1,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 2
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 6
+        },
+        "interaction_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_normal",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              },
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_normal",
+                "evaluator_score": 8.549608185507731,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    8.549608185507731
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0.0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              },
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 8.549608185507731,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    8.549608185507731
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0.0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "buy:B",
+          "status": "recommend",
+          "path": [
+            "buy:B",
+            "deploy:B"
+          ],
+          "termination": "complete",
+          "nodes": 6,
+          "declared_toy_utility": 7,
+          "formation": [
+            "A",
+            "B"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "toy_normal",
+                "evaluator_score": 3.9052853826381697,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.9052853826381697
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              },
+              {
+                "scenario_id": "toy_counter",
+                "evaluator_score": 3.9052853826381697,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.9052853826381697
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 6
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:B",
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        }
+      }
+    },
+    {
+      "case_id": "replacement_breaks_link",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "replace:A->D",
+          "status": "recommend",
+          "path": [
+            "replace:A->D"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 7,
+          "formation": [
+            "C",
+            "D"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 7,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    7
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-utility"
+                ],
+                "utility_delta_from_root": -4
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [
+              "link-ac"
+            ],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "deploy:D",
+              [
+                "resource_or_capacity_limit:self.free_board"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold",
+            "replace:A->D",
+            "replace:C->D"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 4
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 11,
+          "formation": [
+            "A",
+            "C"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 11,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3
+                  ],
+                  [
+                    "pair_interaction_value",
+                    8
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 11,
+                "isolated_value": 3,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "deploy:D",
+              [
+                "resource_or_capacity_limit:self.free_board"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold",
+            "replace:A->D",
+            "replace:C->D"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_two": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 11,
+          "formation": [
+            "A",
+            "C"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 11,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3
+                  ],
+                  [
+                    "pair_interaction_value",
+                    8
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 11,
+                "isolated_value": 3,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "deploy:D",
+              [
+                "resource_or_capacity_limit:self.free_board"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold",
+            "replace:A->D",
+            "replace:C->D"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 11,
+          "formation": [
+            "A",
+            "C"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 13.571808365502456,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.664117793789028
+                  ],
+                  [
+                    "pair_interaction_value",
+                    9.907690571713427
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0.0
+                  ]
+                ],
+                "declared_toy_utility": 11,
+                "isolated_value": 3,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "deploy:D",
+              [
+                "resource_or_capacity_limit:self.free_board"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold",
+            "replace:A->D",
+            "replace:C->D"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "replace:A->D",
+          "status": "recommend",
+          "path": [
+            "replace:A->D"
+          ],
+          "termination": "complete",
+          "nodes": 2,
+          "declared_toy_utility": 7,
+          "formation": [
+            "C",
+            "D"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 3.9052853826381697,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    3.9052853826381697
+                  ]
+                ],
+                "declared_toy_utility": 7,
+                "isolated_value": 7,
+                "active_interactions": [],
+                "roles": [
+                  "toy-carry",
+                  "toy-utility"
+                ],
+                "utility_delta_from_root": -4
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [
+              "link-ac"
+            ],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [
+            [
+              "deploy:D",
+              [
+                "resource_or_capacity_limit:self.free_board"
+              ]
+            ]
+          ],
+          "root_supported_actions": [
+            "hold",
+            "replace:A->D",
+            "replace:C->D"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 4
+        }
+      }
+    },
+    {
+      "case_id": "higher_order",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": "buy:C",
+          "status": "recommend",
+          "path": [
+            "buy:C",
+            "deploy:C"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 20,
+          "formation": [
+            "A",
+            "C",
+            "D"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 8,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    8
+                  ]
+                ],
+                "declared_toy_utility": 20,
+                "isolated_value": 8,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ],
+                  [
+                    "triple-acd",
+                    4
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support",
+                  "toy-utility"
+                ],
+                "utility_delta_from_root": 14
+              }
+            ],
+            "interactions_gained": [
+              "link-ac",
+              "triple-acd"
+            ],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "interaction_depth_one": {
+          "selected": "hold",
+          "status": "recommend",
+          "path": [
+            "hold"
+          ],
+          "termination": "complete",
+          "nodes": 1,
+          "declared_toy_utility": 6,
+          "formation": [
+            "A",
+            "D"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 6,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    6
+                  ],
+                  [
+                    "pair_interaction_value",
+                    0
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    0
+                  ]
+                ],
+                "declared_toy_utility": 6,
+                "isolated_value": 6,
+                "active_interactions": [],
+                "roles": [
+                  "toy-support",
+                  "toy-utility"
+                ],
+                "utility_delta_from_root": 0
+              }
+            ],
+            "interactions_gained": [],
+            "interactions_lost": [],
+            "remaining_credits": 1
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 14
+        },
+        "interaction_depth_two": {
+          "selected": "buy:C",
+          "status": "recommend",
+          "path": [
+            "buy:C",
+            "deploy:C"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 20,
+          "formation": [
+            "A",
+            "C",
+            "D"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 20,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    8
+                  ],
+                  [
+                    "pair_interaction_value",
+                    8
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    4
+                  ]
+                ],
+                "declared_toy_utility": 20,
+                "isolated_value": 8,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ],
+                  [
+                    "triple-acd",
+                    4
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support",
+                  "toy-utility"
+                ],
+                "utility_delta_from_root": 14
+              }
+            ],
+            "interactions_gained": [
+              "link-ac",
+              "triple-acd"
+            ],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "cpu_ranker_depth_two": {
+          "selected": "buy:C",
+          "status": "recommend",
+          "path": [
+            "buy:C",
+            "deploy:C"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 20,
+          "formation": [
+            "A",
+            "C",
+            "D"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 21.18178800694378,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    9.770980783437407
+                  ],
+                  [
+                    "pair_interaction_value",
+                    9.907690571713427
+                  ],
+                  [
+                    "higher_order_interaction_value",
+                    1.5031166517929468
+                  ]
+                ],
+                "declared_toy_utility": 20,
+                "isolated_value": 8,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ],
+                  [
+                    "triple-acd",
+                    4
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support",
+                  "toy-utility"
+                ],
+                "utility_delta_from_root": 14
+              }
+            ],
+            "interactions_gained": [
+              "link-ac",
+              "triple-acd"
+            ],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        },
+        "ranker_without_interactions": {
+          "selected": "buy:C",
+          "status": "recommend",
+          "path": [
+            "buy:C",
+            "deploy:C"
+          ],
+          "termination": "complete",
+          "nodes": 4,
+          "declared_toy_utility": 20,
+          "formation": [
+            "A",
+            "C",
+            "D"
+          ],
+          "composition_breakdown": {
+            "leaves": [
+              {
+                "scenario_id": "declared_toy_opponent",
+                "evaluator_score": 4.463183294443623,
+                "feature_contributions": [
+                  [
+                    "isolated_value",
+                    4.463183294443623
+                  ]
+                ],
+                "declared_toy_utility": 20,
+                "isolated_value": 8,
+                "active_interactions": [
+                  [
+                    "link-ac",
+                    8
+                  ],
+                  [
+                    "triple-acd",
+                    4
+                  ]
+                ],
+                "roles": [
+                  "toy-carry",
+                  "toy-support",
+                  "toy-utility"
+                ],
+                "utility_delta_from_root": 14
+              }
+            ],
+            "interactions_gained": [
+              "link-ac",
+              "triple-acd"
+            ],
+            "interactions_lost": [],
+            "remaining_credits": 0
+          },
+          "hard_rejections": [],
+          "root_supported_actions": [
+            "buy:C",
+            "hold"
+          ],
+          "reasons": [
+            "best_supported_worst_case_score"
+          ],
+          "final_gate": "passed_advice_only",
+          "synthetic_oracle_regret": 0
+        }
+      }
+    },
+    {
+      "case_id": "unknown_resource",
+      "family_id": "heldout-ac-composition",
+      "results": {
+        "independent_card_baseline": {
+          "selected": null,
+          "status": "abstain",
+          "path": [],
+          "termination": "unsupported_state_or_rules",
+          "nodes": 0,
+          "declared_toy_utility": null,
+          "formation": null,
+          "composition_breakdown": null,
+          "hard_rejections": [],
+          "root_supported_actions": [],
+          "reasons": [
+            "required_field_unknown:credits"
+          ],
+          "final_gate": "no_action"
+        },
+        "interaction_depth_one": {
+          "selected": null,
+          "status": "abstain",
+          "path": [],
+          "termination": "unsupported_state_or_rules",
+          "nodes": 0,
+          "declared_toy_utility": null,
+          "formation": null,
+          "composition_breakdown": null,
+          "hard_rejections": [],
+          "root_supported_actions": [],
+          "reasons": [
+            "required_field_unknown:credits"
+          ],
+          "final_gate": "no_action"
+        },
+        "interaction_depth_two": {
+          "selected": null,
+          "status": "abstain",
+          "path": [],
+          "termination": "unsupported_state_or_rules",
+          "nodes": 0,
+          "declared_toy_utility": null,
+          "formation": null,
+          "composition_breakdown": null,
+          "hard_rejections": [],
+          "root_supported_actions": [],
+          "reasons": [
+            "required_field_unknown:credits"
+          ],
+          "final_gate": "no_action"
+        },
+        "cpu_ranker_depth_two": {
+          "selected": null,
+          "status": "abstain",
+          "path": [],
+          "termination": "unsupported_state_or_rules",
+          "nodes": 0,
+          "declared_toy_utility": null,
+          "formation": null,
+          "composition_breakdown": null,
+          "hard_rejections": [],
+          "root_supported_actions": [],
+          "reasons": [
+            "required_field_unknown:credits"
+          ],
+          "final_gate": "no_action"
+        },
+        "ranker_without_interactions": {
+          "selected": null,
+          "status": "abstain",
+          "path": [],
+          "termination": "unsupported_state_or_rules",
+          "nodes": 0,
+          "declared_toy_utility": null,
+          "formation": null,
+          "composition_breakdown": null,
+          "hard_rejections": [],
+          "root_supported_actions": [],
+          "reasons": [
+            "required_field_unknown:credits"
+          ],
+          "final_gate": "no_action"
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Toy utility agreement and CPU latency are engineering results, not Yixing playing strength.",
+    "All related contrasts share one heldout synthetic family; no statistical match-performance inference is valid.",
+    "Real rules, opponent transitions, expert labels and independent matches remain missing."
+  ]
+}
