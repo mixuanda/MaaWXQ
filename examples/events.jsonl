@@ -1,0 +1,3 @@
+{"type":"opening_bans","observed_at":"2026-10-16T10:00:00Z","lineups":["Synthetic lineup label (not observed)"]}
+{"type":"opponent_observation","opponent_id":"example-opponent","observed_at":"2026-10-16T10:01:00Z","units":[{"name":"弈星"}]}
+{"type":"opponent_observation","opponent_id":"example-opponent","observed_at":"2026-10-16T10:02:00Z","units":[{"name":"unknown","hero_id":"unknown"}]}

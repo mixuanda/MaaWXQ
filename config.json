@@ -1,0 +1,15 @@
+{
+  "window_title": "王者万象棋",
+  "capture_enabled": false,
+  "input_enabled": false,
+  "cache_dir": "cache",
+  "archive_dir": null,
+  "freshness_seconds": 120,
+  "player_chess_player": {
+    "name": "弈星",
+    "id": "unknown",
+    "entity_type": "chess_player"
+  },
+  "cache_max_bytes": 67108864,
+  "cache_max_files": 50
+}

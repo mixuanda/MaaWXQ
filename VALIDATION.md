@@ -1,0 +1,55 @@
+# Validation record
+
+This file records evidence, not intended capabilities. Private images, machine identifiers, and absolute local paths are excluded from the repository.
+
+## Baseline before public preparation
+
+The existing prototype's local record reported three passing offline unit tests, successful demo/replay/capture-plan commands, and JSON syntax validation of `state.schema.json`. An independent JSON Schema engine had not been used. These checks concern offline state behavior only.
+
+The existing PrintWindow diagnostic returned:
+
+- Invalid target: `capture_unavailable`, `window_not_found`, `image=null`.
+- Confirmed launcher: `capture_unavailable`, `printwindow_failed`, `image=null`.
+- Artificially exhausted cache budget: `cache_limit_reached`, `image=null`, with no new image saved.
+
+The launcher failure must not be generalized to the real game's capture behavior.
+
+## Read-only inspection on 2026-10-17
+
+- Reviewed configuration, state reducer/schema, capture wrapper/worker, tests, and synthetic events.
+- Confirmed capture/input flags remain false and no input/OCR/policy integration exists.
+- A separate OS `CopyFromScreen` window-region capture visibly showed the **real game**, on the **custom-mode selection page**. It did not show an active custom room or match.
+- Exactly one game-region screenshot was taken during this inspection. No game input, focus change, window movement, launch, installation, or login was performed.
+- The image is retained privately outside the repository. It is not a PrintWindow or WGC result and does not validate any input backend.
+- The inspected capture cache had two small non-image files. No capture lock was present. No Git repository existed in this directory or its parents at inspection time.
+
+## Capability status
+
+During public-repository preparation, the three existing unit tests were rerun successfully, and `demo`, synthetic JSONL replay and `capture-plan` completed. No game capture/input test was added. The capture-plan guidance text was updated to request a fresh real-game frame instead of assuming the game was still downloading; runtime control logic is unchanged.
+
+| Capability | Status | Evidence scope |
+|---|---|---|
+| Offline state/replay | Baseline implemented | Synthetic data and existing unit tests |
+| Real-game visual presence | Observed | One visible custom-mode selection frame |
+| Real-game PrintWindow capture | Unknown | Launcher failure is separate evidence |
+| WGC capture | Unknown | No adapter installed or tested |
+| Background click | Unknown | No game input performed |
+| Background drag | Unknown | No game input performed |
+| Background keyboard | Unknown | No game input performed |
+| Minimization/occlusion behavior | Unknown | No controlled capability experiment |
+| Match/bans/opponent perception | Not implemented | No labeled in-match observations |
+| Yixing policy/dynamic transition | Not implemented | Current game rules not yet verified |
+| Pause/stop/input release | Not implemented | No input broker exists |
+
+## Reproduction and future evidence
+
+Run from the project root:
+
+```powershell
+python -B -m unittest -v
+python -X utf8 main.py demo
+python -X utf8 main.py replay --events examples/events.jsonl
+python -X utf8 main.py capture-plan
+```
+
+For each future live experiment, record the backend/version, current target identity in a **private** record, allowed mode, precondition, attempted action, backend result, visible postcondition, pointer/focus effect, stop/release outcome, and final `unknown/pass/fail` conclusion. Never equate API success with game acceptance. Public reports must be sanitized.

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MaaWXQ offline state v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "session_id", "player_chess_player", "phase", "round", "opening_bans", "opponent_history", "evaluated_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "session_id": {"type": "string", "minLength": 1},
+    "player_chess_player": {
+      "type": "object", "additionalProperties": false, "required": ["entity_type", "name", "id"],
+      "properties": {"entity_type": {"const": "chess_player"}, "name": {"const": "弈星"}, "id": {"type": "string", "minLength": 1}}
+    },
+    "phase": {"type": "string", "minLength": 1},
+    "round": {"oneOf": [{"const": "unknown"}, {"type": "integer", "minimum": 0}]},
+    "evaluated_at": {"type": "string", "format": "date-time"},
+    "opening_bans": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "lineups", "observed_at", "age_seconds", "freshness"],
+      "properties": {"status": {"enum": ["unknown", "observed"]}, "lineups": {"type": "array", "items": {"type": "string", "minLength": 1}}, "observed_at": {"$ref": "#/$defs/time"}, "age_seconds": {"$ref": "#/$defs/age"}, "freshness": {"$ref": "#/$defs/freshness"}}
+    },
+    "opponent_history": {
+      "type": "array", "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["opponent_id", "observed_at", "units", "source", "age_seconds", "freshness"],
+        "properties": {
+          "opponent_id": {"type": "string", "minLength": 1}, "observed_at": {"type": "string", "format": "date-time"},
+          "source": {"const": "manual_offline"}, "age_seconds": {"$ref": "#/$defs/age"}, "freshness": {"$ref": "#/$defs/freshness"},
+          "units": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["entity_type", "name", "hero_id"], "properties": {"entity_type": {"const": "hero"}, "name": {"type": "string", "minLength": 1}, "hero_id": {"type": "string", "minLength": 1}}}}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "time": {"oneOf": [{"const": "unknown"}, {"type": "string", "format": "date-time"}]},
+    "age": {"type": ["number", "null"]},
+    "freshness": {"enum": ["unknown", "fresh", "stale"]}
+  }
+}
