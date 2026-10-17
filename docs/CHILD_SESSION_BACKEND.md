@@ -4,6 +4,8 @@
 
 This is the independent isolation route requested alongside ordinary native Win32 capture. It follows the Windows ChildSession concept also used by BetterGI's desktop-duplication feature. It is original Python code based on public API documentation; no BetterGI GPL implementation or resource was copied. BetterGI is not an installed dependency of this backend. A UI card's promise of avoiding mouse occupation is not evidence that this Windows build, game or backend satisfies the requirement.
 
+The [offline control core](CHILD_SESSION_CONTROL.md) provides authenticated control envelopes, heartbeat/lease deadlines, stop generations, same-session checks and owned-input cleanup. It supports explicit synthetic ports only; all native/IPC paths remain unconnected and no live-test gate has passed.
+
 ## Separation and process placement
 
 ```mermaid

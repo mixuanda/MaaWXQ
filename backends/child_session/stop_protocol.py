@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
+import threading
 
 FIELDS = {"schema_version", "session_token", "sequence", "command", "issued_at", "mac"}
 
@@ -38,6 +39,7 @@ class StopProtocol:
             raise ValueError("invalid_stop_ttl")
         self._key, self._token, self._ttl = key, session_token, ttl_seconds
         self.last_sequence = 0
+        self._sequence_lock = threading.Lock()
 
     def encode_stop(self, sequence, *, issued_at=None):
         if type(sequence) is not int or sequence < 1:
@@ -65,7 +67,7 @@ class StopProtocol:
                     message["session_token"] != self._token):
                 return rejected | {"reason": "stop_session_or_command_mismatch"}
             sequence = message["sequence"]
-            if type(sequence) is not int or sequence <= self.last_sequence:
+            if type(sequence) is not int or sequence < 1:
                 return rejected | {"reason": "stop_replay_or_invalid_sequence"}
             now = now or datetime.now(timezone.utc)
             if now.tzinfo is None:
@@ -75,9 +77,13 @@ class StopProtocol:
                 return rejected | {"reason": "stop_message_stale_or_future"}
         except (ValueError, TypeError, KeyError, AttributeError, UnicodeError):
             return rejected | {"reason": "invalid_stop_payload"}
+        with self._sequence_lock:
+            if sequence <= self.last_sequence:
+                return rejected | {"reason": "stop_replay_or_invalid_sequence"}
+            # Consume before cleanup, which may complete after a newer stop callback.
+            self.last_sequence = sequence
         # Local revocation is real; delivery/release in another process is not implemented.
         receipt = backend.stop_local()
-        self.last_sequence = sequence
         return {"protocol_accepted": True, "scope": "local_protocol_only", "reason": "local_stop_latched",
                 "status": "local_permission_revoked", "stop_generation": receipt["stop_generation"],
                 "transport_delivered": False, "remote_release_confirmed": False}
