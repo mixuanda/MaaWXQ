@@ -19,6 +19,8 @@ The core offline prototype uses the Python standard library and Windows APIs. Th
 
 The table reports the license version actually found in each reviewed file. It does not infer an `-only`/`-or-later` grant from the generic license document alone. Preserve and examine upstream source-specific notices when reusing material.
 
+The independent `backends/child_session/` prototype uses original code, the Python standard library and declared Windows WTS APIs. BetterGI/its session documentation are design references only; no GPL implementation or Microsoft sample code was copied, no BetterGI runtime is linked, and no additional package/native binary was added. See [the source links and implementation limits](docs/CHILD_SESSION_BACKEND.md). The HMAC stop codec is a local protocol model, not copied BetterGI IPC code or a functioning RDP transport.
+
 ## Optional runtime provenance
 
 `capture-runtime.lock.json` identifies the official PyPI Windows x64 wheel, fixed version, download URL and SHA-256. `prepare_capture_runtime.py` verifies it and extracts it under ignored `local/`; no pip/global install, driver install or system setting change occurs. The original wheel license is retained locally at `maafw-5.7.2.dist-info/licenses/LICENSE.md`.

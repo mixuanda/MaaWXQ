@@ -2,9 +2,11 @@
 
 An experimental Windows observation and strategy-assistance prototype for **Wangzhe Wanxiangqi (王者万象棋)**, starting with the **Yixing chess player (棋手弈星)**.
 
-**Status: offline state prototype with a single-frame capture adapter under validation.** T1 adds target identity, bounded workers and an optional pinned MaaFramework WGC adapter. Native WGC/game validation is paused at the user's request; no successful real-game WGC frame is claimed. There is no OCR, recommendation engine, input controller, or autonomous match play yet.
+**Status: offline advisory strategy core and capture/backend prototypes under validation.** T1 adds target identity, bounded workers and an optional pinned MaaFramework WGC adapter. Native WGC/game validation is paused at the user's request; no successful real-game WGC frame is claimed. The strategy core uses synthetic tests and an empty/unverified gameplay registry. There is no OCR, verified Yixing gameplay policy, input controller, or autonomous match play yet.
 
 **Sources and licenses:** read [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the verified upstream licenses, actual reference/dependency use, optional runtime contents and unresolved binary-release requirements. MaaWXQ's own license is still undecided; public visibility alone does not grant an open-source license.
+
+**Independent ChildSession route:** a disabled-by-default [backend contract and design](docs/CHILD_SESSION_BACKEND.md) now describes BetterGI-style Windows child-session isolation separately from the ordinary Win32 backend. The offline preflight and authenticated stop-message codec are testable; session activation, preview/IPC transport, remote input and actual isolation are unimplemented/unverified. It cannot open a session or report an action as sent. Live desktop/game tests remain paused.
 
 English is the authoritative project language. Translations may be added; the English version takes precedence if they differ. Chinese game labels in configuration, fixtures, and source are intentional UI/domain strings.
 
@@ -72,6 +74,13 @@ Do not publish captures, account identifiers, raw match replays, logs, machine-s
 The 120-second freshness threshold is an engineering default, not a verified game rule. The future policy must preserve confirmed current-match bans independently of this TTL. See [PLAN.md](PLAN.md) for the planned contract.
 
 ## Roadmap and collaboration
+
+The [offline strategy prototype](docs/STRATEGY_PROTOTYPE.md) provides match-scoped memory, persistent bans, candidate invalidation and transparent scoring behind hard constraints. Its example is explicitly invented `test_rules_not_gameplay` data; all outputs have `execution_allowed=false` and no placement probability. Run it without opening the game:
+
+```powershell
+python -B -m strategy --fixture examples/strategy_synthetic/scenario.json --allow-test-rules
+python -B -m unittest discover -s tests -p "test_strategy_*.py" -v
+```
 
 1. **P0:** verify real-game frames and add a bounded, read-only capture adapter.
 2. **P1:** build match-scoped observations, opponent memory, verified Yixing rules, and explainable recommendations.

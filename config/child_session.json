@@ -1,0 +1,11 @@
+{
+  "schema_version": "child-session-config/1",
+  "enabled": false,
+  "main_session_role": "read_only_preview_and_stop",
+  "preview_input_enabled": false,
+  "allow_main_desktop_input_fallback": false,
+  "require_same_child_session": true,
+  "require_authenticated_stop_ipc": true,
+  "evidence_ttl_seconds": 120,
+  "stop_message_ttl_seconds": 3
+}

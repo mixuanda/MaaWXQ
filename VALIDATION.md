@@ -53,6 +53,12 @@ During public-repository preparation, the three existing unit tests were rerun s
 
 The public source/runtime attribution audit is documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); no native binary, real capture, raw event log or machine-specific identifier is committed.
 
+## Independent ChildSession prototype — offline only
+
+Eight focused tests passed for default-disabled/no-probe behavior, unsafe configuration rejection, fake WTS metadata without calling the enabling API, same-child-session checks, nonoperational behavior even with positive reported evidence, synthetic/stale/future/failed capability rejection, authenticated stop/replay behavior, and tampered/foreign/duplicate/oversized message rejection.
+
+The offline CLI reports disabled by default. With explicitly synthetic supported facts, it still reports blocked, operational false, input permitted false and native transport unimplemented. Local protocol stop changes the generation/latch but explicitly does not claim transport delivery or remote input release. No native platform/session probe, RDP/ChildSession activation, game/window capture/input/login, system-setting change or new dependency occurred during this change. Runtime isolation and all live capability gates remain unknown.
+
 ## Reproduction and future evidence
 
 Run from the project root:

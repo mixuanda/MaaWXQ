@@ -11,6 +11,20 @@ English is authoritative. This is the initial project-management backlog; check 
 | T4 | P2 preparation | gpt-6.1-sol | Planned | T1; no game input required |
 | T5 | P2 | One named gpt-6.1-sol executor | Planned | T1, T4, visibly confirmed custom room |
 | T6 | P3 | gpt-6.1-sol | Planned | T2, T3, T5 |
+| CS1 | Isolation option | gpt-6.1-sol | Offline contract/probe/stop-codec prototype | Independent of ordinary Win32 backend |
+
+## CS1 — Independent ChildSession isolation route
+
+- [x] Add separate disabled configuration and backend interface; prohibit main-preview input and Win32 fallback.
+- [x] Implement read-only platform-probe code and per-capability assessment; only fake APIs and synthetic facts have been tested.
+- [x] Validate same-child-session placement, unknown/stale evidence and permanently blocked unimplemented native transport.
+- [x] Implement/test a bounded authenticated stop-message codec with replay rejection and latched local generation revocation; do not claim IPC delivery or remote release.
+- [x] Document Windows/BetterGI provenance without copying GPL implementation source.
+- [ ] Obtain specific startup/system-change authorization and explicit permission to resume live testing.
+- [ ] Implement/review ActiveX lifecycle, preview-only transport, authenticated named-pipe endpoint, independent watchdog/hotkeys and child-worker held-input release.
+- [ ] Validate host noninterference using a harmless owned window, then separately authorized custom-room actions. No live gate has passed.
+
+See [CHILD_SESSION_BACKEND.md](docs/CHILD_SESSION_BACKEND.md). This optional route is not activated by normal Win32 capture configuration.
 
 ## T0 — Inspect and plan
 
