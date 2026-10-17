@@ -1,0 +1,10 @@
+{
+  "name": "MaaFw",
+  "version": "5.7.2",
+  "platform": "win_amd64",
+  "filename": "maafw-5.7.2-py3-none-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/cc/ec/0a41a587df29b897b3e98281301fd82f143b1868bf3e84d3322a7ca76c0e/maafw-5.7.2-py3-none-win_amd64.whl",
+  "sha256": "969060d34a575212bc0d038847a366a1e16ba74ae91a2caf137e592d2da1b148",
+  "source": "https://github.com/MaaXYZ/MaaFramework/tree/v5.7.2",
+  "selection_reason": "This release selects plain FramePoolScreencap; later releases select the excluded pseudo-minimize wrapper."
+}

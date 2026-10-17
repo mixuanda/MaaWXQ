@@ -41,6 +41,18 @@ During public-repository preparation, the three existing unit tests were rerun s
 | Yixing policy/dynamic transition | Not implemented | Current game rules not yet verified |
 | Pause/stop/input release | Not implemented | No input broker exists |
 
+## T1 code and paused live validation — 2026-10-17
+
+- Added `window_identity.py`, `capture_backend.py`, an explicit backend-selecting CLI and a native WGC worker candidate. The identity API uses query-limited process metadata, client/DPI geometry and stable identity/geometry tokens. These native calls have not yet received a live-target check.
+- The result envelope records before/after identity, host acquisition/completion timing and clear failure reasons. `source_frame_at` remains null because neither wrapper exposes the GPU frame's timestamp.
+- One additional real-game PrintWindow attempt **before the pause** returned `printwindow_failed`, `image=null`. It does not establish WGC failure. No new real-game frame was obtained.
+- Verified the official MaaFw 5.7.2 wheel checksum and extracted it into a private ignored local directory; no global package, driver or system installation occurred. Native WGC/controller execution has not occurred. Version selection avoids the pseudo-minimize wrapper used by the reviewed later release.
+- **14 offline unit tests passed:** 11 capture/identity tests and the 3 existing state tests. Synthetic observers/workers exercise changed identity/geometry, hidden/minimized targets, timeouts and owned-file cleanup, cache byte/count limits including late writers, lock contention, frame dimensions and non-validation semantics. They make no Win32/game calls.
+- User instruction then paused all live window inspections, screenshots and input/login tests. Only code, offline tests and static documentation/license review continued. Do not resume live tests without a subsequent user instruction.
+- WGC real-game capture, native metadata correctness, occlusion/minimization behavior and mouse/focus noninterference remain **unknown**. All input capabilities remain **unknown/unimplemented**. T1 is not fully accepted until an actual native frame is verified when testing is allowed again.
+
+The public source/runtime attribution audit is documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); no native binary, real capture, raw event log or machine-specific identifier is committed.
+
 ## Reproduction and future evidence
 
 Run from the project root:

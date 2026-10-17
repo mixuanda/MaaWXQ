@@ -5,7 +5,7 @@ English is authoritative. This is the initial project-management backlog; check 
 | ID | Stage | Owner | Status | Dependencies |
 |---|---|---|---|---|
 | T0 | P0 | Astra planning | Done: inspection and plan | None |
-| T1 | P0 | gpt-6.1-sol | Next | T0 |
+| T1 | P0 | gpt-6.1-sol | Code/offline checks done; native validation paused | T0 |
 | T2 | P1 | gpt-6.1-sol | Planned | T1 interface; synthetic work can start earlier |
 | T3 | P1 | Astra review, gpt-6.1-sol implementation | Planned | T2, verified current Yixing rules |
 | T4 | P2 preparation | gpt-6.1-sol | Planned | T1; no game input required |
@@ -23,12 +23,14 @@ English is authoritative. This is the initial project-management backlog; check 
 
 Owned files: new `window_identity.py`, `capture_backend.py`, focused capture tests; minimal changes to `capture.py`, configuration and CLI as needed. Keep existing state behavior intact.
 
-- [ ] Define target identity with HWND/PID/start time where available, role evidence, DPI, client geometry, and a geometry version.
-- [ ] Add a thin normal-WGC backend candidate with explicit version pinning. Keep the current PrintWindow path as a diagnostic; do not import window-follow/process-suspension variants.
-- [ ] Return frame timestamp, dimensions, backend, target identity, quality and error reason. Missing/failed frames carry no usable image.
-- [ ] Preserve 64 MiB/50-file stop limits and exclusive capture locking. Do not introduce a continuous capture loop.
+- [x] Define target identity with HWND/PID/start time where available, caller role assertion, DPI, client geometry, and a geometry version. Native metadata calls await live validation.
+- [x] Add a thin normal-WGC backend candidate with explicit version pinning. Keep the current PrintWindow path as a diagnostic; do not import window-follow/process-suspension variants. Native execution remains unvalidated.
+- [x] Return host acquisition timing, dimensions, backend, target identity, quality and error reason. Source-frame time remains unknown; missing/failed frames carry no usable image.
+- [x] Preserve 64 MiB/50-file stop limits and exclusive capture locking. No continuous capture loop was introduced; offline tests cover these invariants.
 - [ ] Verify one real-game frame visually and record limitations. A screenshot taken by a different API is not this backend's pass.
-- [ ] Keep input disabled. Check invalid identity, timeout and limit behavior with focused tests; no unnecessary game activity.
+- [x] Keep input disabled. Check invalid identity, timeout and limit behavior with focused offline tests; no unnecessary game activity.
+
+Live window inspection/capture/input tests were paused by the user on 2026-10-17 to allow login on another device. Code work and offline fixtures may continue. Do not resume live tests without a subsequent user instruction.
 
 Acceptance: one bounded, diagnosable capture path plus honest failure behavior; no focus/input side effects. If WGC is unavailable, report the exact limitation and retain read-only operation. Do not silently substitute desktop capture as a WGC success.
 
@@ -92,3 +94,7 @@ Acceptance: a verified visible postcondition for the selected single action plus
 - [ ] End after one preparation round and produce a sanitized report; retain private raw evidence locally within budget.
 
 Acceptance: one custom-room preparation round with attributable decisions, verified feedback and no main-desktop pointer/keyboard/focus interference. This does not authorize or establish full-match unattended play.
+
+## Later research milestone — Yixing strategy evaluation
+
+Research targets for Star-rank-and-above play are first place at least 50% and top-three at least 75%. These are unverified goals, not guarantees, implemented capabilities or authorization for ranked automation. Develop lineup matching, economy/tempo, opponent memory, ban adaptation and transitions. Evaluate a fixed game/rules version, rank band and complete eligible match population; separate tuning/training from held-out evaluation, do not cherry-pick results, and report sample size and confidence intervals. Current live-test authorization remains custom rooms only.

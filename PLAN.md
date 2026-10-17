@@ -4,6 +4,8 @@ Updated: 2026-10-17. English is authoritative; optional translations must not re
 
 ## 1. Outcome and acceptance target
 
+The user's long-term research targets are first-place rate >=50% and top-three rate >=75% with chess-player Yixing at Star rank and above. They are unverified objectives, not present capability or authorization to automate ranked play. Future evaluation must fix game/rules version, rank band and eligibility criteria; include all complete eligible games, separate training/tuning from held-out evaluation, and report sample sizes and confidence intervals. Do not infer superiority over expert players from LLM reasoning.
+
 Build an observation-first Windows assistant for Wangzhe Wanxiangqi, starting with **chess-player Yixing**, per-match bans, opponent lineup memory, and explainable transitions between viable lineups.
 
 **Unattended automation must not disturb the main desktop's mouse, keyboard input, or focus.** This is a release gate, not a preference. Foreground SendInput may be used only for an explicitly supervised diagnostic; it cannot satisfy the unattended goal. If background input is unsupported, stop automated actions and evaluate an isolated-session option. Never silently fall back to taking the user's pointer or focus.
@@ -11,6 +13,8 @@ Build an observation-first Windows assistant for Wangzhe Wanxiangqi, starting wi
 The current deliverable is a small offline prototype and an executable plan. It is not a completed game bot. Preserve Python and add thin interfaces rather than replacing the whole stack before proving the capture/input assumptions.
 
 ## 2. Inspected baseline
+
+Implementation update: the T1 identity and single-frame adapter code plus offline invariants are available. The user has paused all live game window/capture/input tests to use another device; code/offline work continues. Ordinary WGC is pinned to MaaFw 5.7.2, whose manager selects plain FramePool. Native WGC execution and target metadata remain unvalidated. See [VALIDATION.md](VALIDATION.md), [the capture contract](docs/CAPTURE_INTERFACE.md), and [third-party notices](THIRD_PARTY_NOTICES.md).
 
 | Area | Verified or observed | Remaining uncertainty |
 |---|---|---|
