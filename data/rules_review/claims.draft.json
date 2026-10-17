@@ -1,0 +1,103 @@
+{
+  "schema_version": "rules-review/1",
+  "reviewed_on": "2026-10-17",
+  "activation_status": "draft_not_executable",
+  "runtime_eligible": false,
+  "current_client_build": null,
+  "current_match_mode": null,
+  "latest_located_balance_announcement": "v1.6.1",
+  "not_a_latest_version_guarantee": true,
+  "entity": {"entity_type": "chess_player", "display_name_ui": "弈星", "game_entity_id": null},
+  "source_facts": [
+    {
+      "claim_id": "F01",
+      "source_ids": ["official_app_store", "official_patch_161"],
+      "statement": "The publisher names Yixing as a chess player.",
+      "source_locator": "Developer chess-player description; patch chess-player adjustments > Yixing",
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown"
+    },
+    {
+      "claim_id": "F02",
+      "source_ids": ["official_patch_161"],
+      "statement": "The v1.6.1 announcement changes Yixing's Yushi energy cost.",
+      "source_locator": "Chess-player adjustments > Yixing > Yushi",
+      "source_values": {"before": 8, "after": 6, "unit": "energy", "ability_name_ui": "驭势"},
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown",
+      "unresolved_dependencies": ["G01", "G02", "G03", "G04", "G05", "G06"]
+    },
+    {
+      "claim_id": "F03",
+      "source_ids": ["official_patch_161"],
+      "statement": "The announcement reports correcting Yixing's level-six talent description.",
+      "source_locator": "Core gameplay > problem fixes",
+      "corrected_description": null,
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown",
+      "unresolved_dependencies": ["G01", "G05"]
+    },
+    {
+      "claim_id": "F04",
+      "source_ids": ["official_novice_guide"],
+      "statement": "The guide describes a randomly assigned opponent each round.",
+      "source_locator": "Basic rules > competition",
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown"
+    },
+    {
+      "claim_id": "F05",
+      "source_ids": ["official_novice_guide"],
+      "statement": "The guide says unused energy carries into the next round.",
+      "source_locator": "Basic rules > energy acquisition",
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown"
+    },
+    {
+      "claim_id": "F06",
+      "source_ids": ["official_novice_guide"],
+      "statement": "The guide describes energy-funded chess-player upgrades, talents and capacity progression.",
+      "source_locator": "Basic rules > chess player; energy expenditure",
+      "numeric_progression_table": null,
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown"
+    },
+    {
+      "claim_id": "F07",
+      "source_ids": ["official_novice_guide"],
+      "statement": "The guide distinguishes hero cards, card effects and faction identities.",
+      "source_locator": "Basic rules > heroes",
+      "synergy_formula": null,
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown"
+    },
+    {
+      "claim_id": "F08",
+      "source_ids": ["official_test_server"],
+      "statement": "The official FAQ warns test-server designs can differ from production.",
+      "source_locator": "Test-server precautions",
+      "status": "verified_source_statement",
+      "current_match_applicability": "unknown"
+    }
+  ],
+  "inferences": [
+    {"inference_id": "I01", "from_claim_ids": ["F02", "F03", "F08"], "statement": "A patch and server binding is necessary before promoting a copying rule.", "status": "engineering_inference_not_game_rule"},
+    {"inference_id": "I02", "from_claim_ids": ["F04"], "statement": "Scouting a chosen opponent does not prove that opponent is the next matchup.", "status": "engineering_inference_not_game_rule"},
+    {"inference_id": "I03", "from_claim_ids": ["F05", "F06"], "statement": "Spending and conserving should be compared; no interest breakpoint follows from carryover alone.", "status": "engineering_inference_not_game_rule"}
+  ],
+  "gaps": [
+    {"gap_id": "G01", "topic": "Installed build, balance patch, server and mode binding", "status": "unknown", "value": null, "blocks": ["all real-game action advice"]},
+    {"gap_id": "G02", "topic": "Copy trigger, availability, task/reward schedule and phase ordering", "status": "unknown", "value": null, "blocks": ["copy candidate timing", "multi-step copy transitions"]},
+    {"gap_id": "G03", "topic": "Yushi cost modifiers, payment timing and failure/refund semantics", "status": "unknown", "value": null, "blocks": ["current effective-cost accounting"]},
+    {"gap_id": "G04", "topic": "Eligible opponent and hero pool, randomness, ties and target control", "status": "unknown", "value": null, "blocks": ["copy target selection", "expected-copy value"]},
+    {"gap_id": "G05", "topic": "Copied properties, destination, duration and corrected talent wording", "status": "unknown", "value": null, "blocks": ["combat-value estimates", "temporary versus permanent accounting"]},
+    {"gap_id": "G06", "topic": "Hand/board capacity, overflow and copy interaction order", "status": "unknown", "value": null, "blocks": ["copy feasibility", "free-slot planning"]},
+    {"gap_id": "G07", "topic": "Ban object, match lifecycle, acquisition/copy exceptions and semantic IDs", "status": "unknown", "value": null, "blocks": ["real-game ban coverage", "all action promotion"]},
+    {"gap_id": "G08", "topic": "Energy income, card-specific prices, sale returns, upgrade costs and refresh probabilities", "status": "unknown", "value": null, "blocks": ["economic optimization", "shop transition models"]},
+    {"gap_id": "G09", "topic": "Hero/card IDs, keyword order, faction interactions and formation effects", "status": "unknown", "value": null, "blocks": ["composition marginal value", "formation evaluation"]},
+    {"gap_id": "G10", "topic": "Opponent coverage, possible future changes and matchup distribution", "status": "unknown", "value": null, "blocks": ["calibrated threat probabilities", "single-matchup certainty"]},
+    {"gap_id": "G11", "topic": "Auction availability, exact payments, dividends and interaction order", "status": "unknown", "value": null, "blocks": ["bid optimization"]},
+    {"gap_id": "G12", "topic": "Validated combat, damage and placement transitions", "status": "unknown", "value": null, "blocks": ["placement probabilities", "full-game search", "RL reward validity"]}
+  ],
+  "promotion_requirements": ["Resolve the relevant gaps against a reviewed source and permitted version-bound evidence.", "Keep source facts separate from interpreted transitions and prove their stated applicability.", "Assign semantic entity/rule IDs without inferring them from names.", "Add focused real-transition regression cases before enabling an operation.", "No review record in this file is automatically imported into strategy.RuleRegistry."]
+}

@@ -1,0 +1,22 @@
+{
+  "annotation_schema_version": "decision-review/1",
+  "record_kind": "unfilled_outcome_template_not_match_data",
+  "runtime_eligible": false,
+  "not_for_inference": true,
+  "outcome_record_id": null,
+  "decision_point_id": null,
+  "match_pseudonym": null,
+  "recommendation_id": null,
+  "recommended_candidate_id": null,
+  "actual_human_action": {"status": "unknown", "semantic_operation": null, "target_ids": null},
+  "intervention_status": "unknown",
+  "deviation_reason": null,
+  "observed_transition": {"status": "unknown", "value": null, "observed_at": null, "source_ref": null, "confidence": null},
+  "execution_status": "unknown",
+  "round_result": {"status": "unknown", "value": null},
+  "match_result": {"status": "unknown", "placement": null, "lobby_size": null, "eligible_for_evaluation": null, "exclusion_reason": null},
+  "diagnostic_categories": [],
+  "counterfactual_best_action": {"status": "unknown", "value": null},
+  "review_notes": null,
+  "public_release_cleared": false
+}
