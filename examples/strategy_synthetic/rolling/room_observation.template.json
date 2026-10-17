@@ -1,0 +1,49 @@
+{
+  "schema_version": "pending-custom-room-record/1",
+  "domain": "real_room_observation_pending",
+  "record_status": "empty_template_not_an_observation",
+  "synthetic_planner_compatible": false,
+  "decision_input_allowed": false,
+  "readiness": {"human_login_ready": null, "coordination_reference": null, "consent_reference": null},
+  "run_id": null,
+  "mode": "custom_room_pending_confirmation",
+  "match_pseudonym": null,
+  "opponent_pseudonym": null,
+  "build": null,
+  "patch": null,
+  "round": null,
+  "phase": null,
+  "decision_cutoff": null,
+  "observation": {
+    "event_id": null,
+    "source": null,
+    "observed_at": null,
+    "ingested_at": null,
+    "coverage": "unknown",
+    "fields": [
+      {"key": "resources", "status": "unknown", "value": null, "last_seen": null, "confidence": null},
+      {"key": "board", "status": "unknown", "value": null, "last_seen": null, "confidence": null},
+      {"key": "hand", "status": "unknown", "value": null, "last_seen": null, "confidence": null},
+      {"key": "offers", "status": "unknown", "value": null, "last_seen": null, "confidence": null},
+      {"key": "bans", "status": "unknown", "value": null, "last_seen": null, "confidence": null},
+      {"key": "opponent_board", "status": "unknown", "value": null, "last_seen": null, "confidence": null}
+    ],
+    "confidence_kind": "uncalibrated"
+  },
+  "rules": {"version": null, "digest": null, "reviewed_references": [], "unresolved_semantics": []},
+  "decision": {
+    "state_version": null,
+    "ban_version": null,
+    "evaluator_version": null,
+    "candidates": [],
+    "hard_rejections": [],
+    "budget": null,
+    "selected_advice": null,
+    "rationale": [],
+    "expires_at": null,
+    "execution_allowed": false
+  },
+  "human_action": {"intervention": null, "actual_action": null, "observed_at": null},
+  "outcome_separate_from_decision_input": {"source": null, "observed_at": null, "observed_changes": [], "unknowns": []},
+  "stop_reason": null
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "toy-rolling-fixture/1",
+  "domain": "test_rules_not_gameplay",
+  "worlds": {
+    "investment": {
+      "version": "toy-rolling-investment-1",
+      "domain": "test_rules_not_gameplay",
+      "verification": "declared_synthetic",
+      "cards": [
+        {"unit_id": "A", "value": 1, "price": 0, "roles": ["team"]},
+        {"unit_id": "B", "value": 6, "price": 2},
+        {"unit_id": "C", "value": 2, "price": 1, "roles": ["team"]},
+        {"unit_id": "D", "value": 2, "price": 1, "roles": ["team"]}
+      ],
+      "pairs": [{"link_id": "pair-ac", "units": ["A", "C"], "value": 3}],
+      "thresholds": [{"link_id": "three-team", "role": "team", "minimum": 3, "value": 12}],
+      "profiles": [{"profile_id": "declared-neutral", "board_ids": []}],
+      "rounds": [
+        {"round": 1, "income_on_entry": 0, "offers": ["B", "C"], "capacity": 2, "utility_weight": 1},
+        {"round": 2, "income_on_entry": 0, "offers": ["D"], "capacity": 3, "utility_weight": 1}
+      ],
+      "replace_credit_cost": 1,
+      "replace_utility_cost": 2,
+      "deploy_credit_cost": 0
+    },
+    "pivot": {
+      "version": "toy-rolling-pivot-1",
+      "domain": "test_rules_not_gameplay",
+      "verification": "declared_synthetic",
+      "cards": [
+        {"unit_id": "A", "value": 1, "price": 0},
+        {"unit_id": "B", "value": 6, "price": 2},
+        {"unit_id": "C", "value": 2, "price": 1},
+        {"unit_id": "E", "value": 3, "price": 1}
+      ],
+      "pairs": [
+        {"link_id": "pair-ac", "units": ["A", "C"], "value": 8},
+        {"link_id": "pair-ae", "units": ["A", "E"], "value": 6}
+      ],
+      "thresholds": [],
+      "profiles": [
+        {"profile_id": "guard", "board_ids": ["enemy-base", "guard"]},
+        {"profile_id": "breaker", "board_ids": ["enemy-base", "breaker"], "disabled_links": ["pair-ac", "pair-ae"]}
+      ],
+      "rounds": [{"round": 1, "income_on_entry": 0, "offers": [], "capacity": 2, "utility_weight": 1}],
+      "replace_credit_cost": 1,
+      "replace_utility_cost": 2,
+      "deploy_credit_cost": 0
+    }
+  },
+  "cases": [
+    {"case_id": "greedy_current_round", "contrast_family": "resource_investment", "world": "investment", "horizon": 1,
+     "state": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2}},
+    {"case_id": "patient_two_rounds", "contrast_family": "resource_investment", "world": "investment", "horizon": 2,
+     "state": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2}},
+    {"case_id": "future_threshold_unit_banned", "contrast_family": "resource_investment", "world": "investment", "horizon": 2,
+     "state": {"board_ids": ["A"], "offer_ids": ["B", "C"], "credits": 2, "bans": ["D"]}},
+    {"case_id": "fresh_guard", "contrast_family": "opponent_change", "world": "pivot", "horizon": 1,
+     "state": {"board_ids": ["A"], "hand_ids": ["B", "C", "E"], "credits": 1, "opponent_board": ["enemy-base", "guard"]}},
+    {"case_id": "fresh_breaker", "contrast_family": "opponent_change", "world": "pivot", "horizon": 1,
+     "state": {"board_ids": ["A"], "hand_ids": ["B", "C", "E"], "credits": 1, "opponent_board": ["enemy-base", "breaker"]}},
+    {"case_id": "partial_opponent", "contrast_family": "opponent_change", "world": "pivot", "horizon": 1,
+     "state": {"board_ids": ["A"], "hand_ids": ["B", "C", "E"], "credits": 1, "opponent_board": ["enemy-base"], "coverage": "partial"}},
+    {"case_id": "pivot_before_ban", "contrast_family": "ban_and_switch_cost", "world": "pivot", "horizon": 1,
+     "state": {"board_ids": ["A", "B"], "hand_ids": ["C", "E"], "credits": 1, "opponent_board": ["enemy-base", "guard"]}},
+    {"case_id": "pivot_after_c_ban", "contrast_family": "ban_and_switch_cost", "world": "pivot", "horizon": 1,
+     "state": {"board_ids": ["A", "B"], "hand_ids": ["C", "E"], "credits": 1, "bans": ["C"], "opponent_board": ["enemy-base", "guard"]}}
+  ]
+}
