@@ -205,3 +205,24 @@ match remains unsettled in the frozen handoff. Eligible samples are zero.
 Additional-unit placement, army development, general talents, opponent-aware
 formations and full match strategy remain unfinished. Integration performed
 only offline checks, preserving native guards and screenshot retention limits.
+
+## V13 four-unit evidence and read-only helpers
+
+[V13](../docs/ARMY_V13.md) records a new Su Lie / Kuang Tie / Da Qiao / Jiang Ziya
+army reaching 4/5 through submitted drags plus recorded image review. Only the
+first unit had a complete automatic deployment postcondition; later original
+unverified/review-required statuses remain unchanged. The early 2/5 original
+PNG is missing after private rolling retention. Hashes and metadata cannot
+replace its pixels. The 3/5 and 4/5 originals remain available.
+
+`runtime/army_pixels.cs` and `runtime.army_perception` expose bitmap measurements,
+bounded hand candidates and retained review-byte binding. Population similarity
+is not a count; all helpers remain unable to authorize input or report automatic
+deployment success. No multi-unit input adapter or private retention helper is
+added. Source-only post-run guards were not live-retested.
+
+Both planned fifth-unit attempts stopped without input; the game ended sixth.
+The prior V12 match also later ended sixth. Both debug outcomes are excluded
+from win-rate samples. Five-unit play, autonomous army development and a full
+match strategy remain unfinished. Integration used only offline checks and did
+not touch the game or control workspace; public capture limits are unchanged.

@@ -1,5 +1,9 @@
 # V12: verified ready transitions and reviewed talent selections
 
+Later [V13](ARMY_V13.md) records this V12 match's eventual sixth-place debug
+result and a separate new four-unit army trial. Both are excluded from win-rate
+samples. The unsettled statements below describe the original V12 handoff.
+
 The control worker ran another authorized five-Xingyao-bot custom game as
 positively recognized Yi Xing. It automatically purchased and deployed Li
 Yuanfang, then verified ready transitions in rounds 3, 4 and 5. Round 3 used
