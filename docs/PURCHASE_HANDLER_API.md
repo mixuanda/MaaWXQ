@@ -1,5 +1,9 @@
 # One visible purchase and batched OCR
 
+See [recognition repair and actual first purchase](PURCHASE_RECOGNITION_REPAIR.md)
+for the later real purchase evidence and the remaining automatic postcondition
+limitation. The portable repair exposes candidates without promoting OCR hits.
+
 V5/V6 continuation. No game input was run during this implementation. This
 small handler does not depend on global combat statistics, a complete unit
 model, Yi Xing passive targeting, or the generic Advisor's complete rule registry.
