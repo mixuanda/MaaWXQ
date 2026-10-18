@@ -64,6 +64,13 @@ the session replay API for historical cutoffs. Validation establishes continued
 advisory support, not UI target identity, physical execution or postcondition
 success. Unsupported real rules still yield a concrete gap list and no proposal.
 
+The [frame recognition adapter](STRATEGY_RECOGNITION_ADAPTER.md) converts explicit
+producer batches into observations and lists exact rule field dependencies.
+`observe_batch(records, now=...)` updates a complete frame atomically;
+`invalidate(reason)` revokes the current proposal while retaining observed facts.
+Both operations also have JSONL commands. Unknown/lobby and host-only WGC frames
+do not become battle events.
+
 The persistent process transport uses one JSON command and one JSON response per
 line, with stdout flushed after every response:
 

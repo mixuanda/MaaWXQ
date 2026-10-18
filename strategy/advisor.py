@@ -9,10 +9,10 @@ import sys
 import uuid
 
 from .codec import observation_from_dict, timestamp
-from .contracts import MatchState, aware
+from .contracts import MatchState, aware, identifier
 from .policy import filter_candidates
 from .rolling.actions import revalidate
-from .session import (MAX_BYTES, MAX_EVENTS, _json, _object, configure_request,
+from .session import (MAX_BYTES, MAX_EVENTS, _json, _object, _snapshot, configure_request,
                       evaluate_state, read_request)
 from .state import reduce_observation
 
@@ -35,6 +35,8 @@ class Advisor:
         self._proposal_id = None
         self._instance = uuid.uuid4().hex
         self._generation = 0
+        self._invalidation_reason = None
+        self._invalidation_time = None
 
     @property
     def state(self):
@@ -42,16 +44,44 @@ class Advisor:
 
     def observe(self, record, *, now):
         """Accept an actual producer record without inventing missing fields."""
-        event = observation_from_dict(record)
-        previous = self._state
-        updated = reduce_observation(previous, event, now=_time(now))
-        if len(updated.events) > MAX_EVENTS:
-            raise ValueError("active match exceeds observation event limit")
+        return self.observe_batch([record], now=now)["receipts"][0]
+
+    def observe_batch(self, records, *, now):
+        """Commit one frame's events atomically; malformed siblings cannot partly update state."""
+        if not isinstance(records, (list, tuple)) or not 1 <= len(records) <= MAX_EVENTS:
+            raise ValueError("nonempty bounded observation batch required")
+        events = tuple(observation_from_dict(record) for record in records)
+        at, updated, receipts = _time(now), self._state, []
+        for event in events:
+            previous = updated
+            updated = reduce_observation(previous, event, now=at)
+            if len(updated.events) > MAX_EVENTS:
+                raise ValueError("active match exceeds observation event limit")
+            receipts.append({"schema_version": "strategy-observation-receipt/1",
+                             "event_id": event.event_id, "state_changed": updated is not previous,
+                             "match_id": updated.match_id, "state_version": updated.state_version,
+                             "ban_version": updated.ban_version, "execution_allowed": False})
         self._state = updated
-        return {"schema_version": "strategy-observation-receipt/1",
-                "event_id": event.event_id, "state_changed": updated is not previous,
-                "match_id": updated.match_id, "state_version": updated.state_version,
-                "ban_version": updated.ban_version, "execution_allowed": False}
+        policy = self._configured[2]
+        if self._invalidation_reason and any(
+                event.kind in ("state", "match_start")
+                and (self._invalidation_time is None or event.observed_at > self._invalidation_time)
+                and event.round is not None and event.phase is not None
+                and event.context_confidence is not None and event.context_confidence >= policy.min_confidence
+                for event in events):
+            self._invalidation_reason = self._invalidation_time = None
+        return {"schema_version": "strategy-observation-batch-receipt/1", "receipts": receipts,
+                "state_version": updated.state_version, "execution_allowed": False}
+
+    def invalidate(self, reason, *, now=None):
+        """Keep prior observed facts while revoking an intent after an uncertain frame."""
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("an explicit invalidation reason is required")
+        self._selected = self._proposal_id = None
+        self._invalidation_reason = reason
+        self._invalidation_time = _time(now) if now is not None else self._state.last_seen
+        return {"schema_version": "strategy-proposal-revocation/1", "reason": reason,
+                "state_version": self._state.state_version, "execution_allowed": False}
 
     def decide(self, *, decision_at, point_id="current", opponent_id=None,
                budget=None, economy=None):
@@ -59,6 +89,15 @@ class Advisor:
         at = _time(decision_at)
         if self._state.evidence_watermark is not None and at < self._state.evidence_watermark:
             raise ValueError("live cutoff precedes current evidence; use session replay for history")
+        identifier(point_id)
+        if self._invalidation_reason:
+            return {"point_id": point_id, "decision_at": at.isoformat(), "status": "abstain",
+                    "execution_allowed": False, "rule_domain": self._configured[1].domain,
+                    "selected": None, "proposal_id": None, "action_proposal": None,
+                    "blocking_gaps": [{"code": "fresh_recognition_required", "detail": self._invalidation_reason}],
+                    "snapshot": _snapshot(self._state), "snapshot_eligibility": "suspended_pending_fresh_context",
+                    "ranking": [], "ranking_scope": "no_current_supported_context", "rejected": [],
+                    "reasons": ["fresh_recognition_required"], "core_result": None}
         point = {"point_id": point_id, "decision_at": at.isoformat()}
         for key, value in (("opponent_id", opponent_id), ("budget", budget), ("economy", economy)):
             if value is not None:
@@ -67,6 +106,7 @@ class Advisor:
                                      available=self._state.events, total_events=len(self._state.events))
         self._generation += 1
         self._selected = result.selected
+        self._invalidation_reason = None
         self._proposal_id = (self._instance + ":" + str(self._generation)) if self._selected else None
         row["proposal_id"] = self._proposal_id
         if row["action_proposal"] is not None:
@@ -82,6 +122,8 @@ class Advisor:
         at = _time(now)
         engine, rules, policy, memory_policy = self._configured
         reasons = ("proposal_unknown_or_superseded",)
+        if self._invalidation_reason:
+            reasons += ("recognition_invalidated_proposal:" + self._invalidation_reason,)
         intent = None
         if self._selected is not None and proposal_id == self._proposal_id:
             intent = self._selected.intent if engine == "synthetic_rolling" else self._selected
@@ -107,6 +149,12 @@ class Advisor:
         if operation == "observe":
             _object(command, ("op", "observation", "now"), "observe command")
             return self.observe(command["observation"], now=command["now"])
+        if operation == "observe_batch":
+            _object(command, ("op", "observations", "now"), "observe_batch command")
+            return self.observe_batch(command["observations"], now=command["now"])
+        if operation == "invalidate":
+            _object(command, ("op", "reason", "now"), "invalidate command")
+            return self.invalidate(command["reason"], now=command.get("now"))
         if operation == "decide":
             _object(command, ("op", "decision_at", "point_id", "opponent_id", "budget", "economy"),
                     "decide command")

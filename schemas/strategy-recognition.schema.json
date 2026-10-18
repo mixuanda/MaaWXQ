@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "One recognizer frame batch for atomic strategy ingestion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "data_kind",
+    "extractor_version",
+    "frame",
+    "scene"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "strategy-recognition-batch/1"
+    },
+    "data_kind": {
+      "enum": [
+        "screen_recognition",
+        "synthetic"
+      ]
+    },
+    "extractor_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "observed_at",
+        "ingested_at",
+        "time_basis"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "observed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "ingested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "time_basis": {
+          "enum": [
+            "host_acquisition_only",
+            "synchronous_visible_capture",
+            "verified_source_frame_timestamp"
+          ]
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "observed",
+            "unknown",
+            "ambiguous"
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence_kind": {
+          "const": "uncalibrated"
+        }
+      }
+    },
+    "context": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "match_id": {
+          "$ref": "strategy-observation.schema.json#/properties/match_id"
+        },
+        "round": {
+          "$ref": "strategy-observation.schema.json#/properties/round"
+        },
+        "phase": {
+          "$ref": "strategy-observation.schema.json#/properties/phase"
+        },
+        "game_build": {
+          "$ref": "strategy-observation.schema.json#/properties/game_build"
+        },
+        "rules_version": {
+          "$ref": "strategy-observation.schema.json#/properties/rules_version"
+        },
+        "context_confidence": {
+          "$ref": "strategy-observation.schema.json#/properties/context_confidence"
+        }
+      },
+      "required": [
+        "match_id"
+      ]
+    },
+    "start_match": {
+      "type": "boolean"
+    },
+    "own_fields": {
+      "$ref": "strategy-observation.schema.json#/properties/fields"
+    },
+    "bans": {
+      "$ref": "strategy-observation.schema.json#/properties/fields/items"
+    },
+    "opponents": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "opponent_id",
+          "coverage",
+          "fields"
+        ],
+        "properties": {
+          "opponent_id": {
+            "$ref": "strategy-observation.schema.json#/properties/opponent_id"
+          },
+          "coverage": {
+            "$ref": "strategy-observation.schema.json#/properties/coverage"
+          },
+          "fields": {
+            "$ref": "strategy-observation.schema.json#/properties/fields"
+          }
+        }
+      }
+    }
+  }
+}

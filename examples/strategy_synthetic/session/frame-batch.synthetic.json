@@ -1,0 +1,121 @@
+{
+  "schema_version": "strategy-recognition-batch/1",
+  "data_kind": "synthetic",
+  "extractor_version": "synthetic-contract-example/1",
+  "frame": {
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "observed_at": "2030-01-01T00:00:00+00:00",
+    "ingested_at": "2030-01-01T00:00:00+00:00",
+    "time_basis": "synchronous_visible_capture"
+  },
+  "scene": {
+    "status": "observed",
+    "value": "battle",
+    "confidence": 0.95
+  },
+  "context": {
+    "match_id": "synthetic-rolling-match",
+    "round": 1,
+    "phase": "test_preparation",
+    "game_build": "synthetic-rolling-build-1",
+    "rules_version": "toy-rolling-pivot-1",
+    "context_confidence": 0.95
+  },
+  "start_match": true,
+  "own_fields": [
+    {
+      "key": "credits",
+      "status": "observed",
+      "value": 1,
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "board_ids",
+      "status": "observed",
+      "value": [
+        "A",
+        "B"
+      ],
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "hand_ids",
+      "status": "observed",
+      "value": [
+        "C",
+        "E"
+      ],
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "offer_ids",
+      "status": "observed",
+      "value": [],
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "discarded_ids",
+      "status": "observed",
+      "value": [],
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "capacity",
+      "status": "observed",
+      "value": 2,
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "hand_capacity",
+      "status": "observed",
+      "value": 4,
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "free_board",
+      "status": "observed",
+      "value": 0,
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    },
+    {
+      "key": "free_hand",
+      "status": "observed",
+      "value": 2,
+      "confidence": 0.95,
+      "confidence_kind": "uncalibrated"
+    }
+  ],
+  "bans": {
+    "key": "banned_tags",
+    "status": "observed",
+    "value": [],
+    "confidence": 0.95,
+    "confidence_kind": "uncalibrated"
+  },
+  "opponents": [
+    {
+      "opponent_id": "toy-opponent",
+      "coverage": "full",
+      "fields": [
+        {
+          "key": "board_ids",
+          "status": "observed",
+          "value": [
+            "enemy-base",
+            "guard"
+          ],
+          "confidence": 0.95,
+          "confidence_kind": "uncalibrated"
+        }
+      ]
+    }
+  ]
+}

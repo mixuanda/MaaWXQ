@@ -118,6 +118,53 @@
             "proposal_id",
             "now"
           ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "observations",
+            "now"
+          ],
+          "properties": {
+            "op": {
+              "const": "observe_batch"
+            },
+            "observations": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 2048,
+              "items": {
+                "$ref": "strategy-observation.schema.json"
+              }
+            },
+            "now": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "reason"
+          ],
+          "properties": {
+            "op": {
+              "const": "invalidate"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "now": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
         }
       ]
     },
@@ -139,7 +186,9 @@
                 "schema_version": {
                   "enum": [
                     "strategy-observation-receipt/1",
-                    "strategy-proposal-validation/1"
+                    "strategy-proposal-validation/1",
+                    "strategy-observation-batch-receipt/1",
+                    "strategy-proposal-revocation/1"
                   ]
                 },
                 "candidate_valid": {

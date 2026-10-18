@@ -17,21 +17,23 @@ CAPTURE_MAX_FILES=50
 CAPTURE_MAX_BYTES=64*1024*1024
 CAPTURE_FRAME_RESERVE=6*1024*1024  # Above the supported 1450x869 RGBA PNG bound.
 
-def ensure_capture_capacity(root,frames=1):
+def ensure_capture_capacity(root,frames=1,frame_reserve=None):
     """Shared run-parent budget; stop when full, never delete old evidence."""
     root=Path(root).resolve()
     if root==Path(root.anchor):raise RuntimeError('capture_budget_requires_scoped_parent')
     if type(frames) is not int or not 0<=frames<=8:raise ValueError('invalid_capture_reservation')
+    reserve=CAPTURE_FRAME_RESERVE if frame_reserve is None else frame_reserve
+    if type(reserve) is not int or not 0<reserve<=CAPTURE_FRAME_RESERVE:raise ValueError('invalid_frame_reservation')
     count=used=0
     for path in root.rglob('*.png'):
         count+=1;used+=path.stat().st_size
         if count>CAPTURE_MAX_FILES or used>CAPTURE_MAX_BYTES:break
-    if count+frames>CAPTURE_MAX_FILES or used+frames*CAPTURE_FRAME_RESERVE>CAPTURE_MAX_BYTES:
+    if count+frames>CAPTURE_MAX_FILES or used+frames*reserve>CAPTURE_MAX_BYTES:
         raise RuntimeError('capture_budget_full_no_input_or_retry')
     return dict(files=count,bytes=used,max_files=CAPTURE_MAX_FILES,max_bytes=CAPTURE_MAX_BYTES,
-                reserved_frames=frames,per_frame_reserve=CAPTURE_FRAME_RESERVE)
+                reserved_frames=frames,per_frame_reserve=reserve)
 
-def capture(row,out,reference,layout='custom_selection'):
+def capture(row,out,reference,layout='custom_selection',menu_reference=None):
     ensure_capture_capacity(out.parent.parent)
     before=inspect_game(row['hwnd'],row['pid']);Binding.from_observation(before)
     if before['identity_version']!=row['identity_version']:raise RuntimeError('target_identity_changed')
@@ -39,6 +41,7 @@ def capture(row,out,reference,layout='custom_selection'):
     command=['powershell.exe','-NoProfile','-NonInteractive','-File',str(ROOT/'runtime/screen_frame.ps1'),
              '-Hwnd',str(row['hwnd']),'-ExpectedPid',str(row['pid']),'-X',str(cl['screen_x']),'-Y',str(cl['screen_y']),
              '-Width',str(cl['width']),'-Height',str(cl['height']),'-Output',str(out),'-Reference',str(reference),'-Layout',layout]
+    if menu_reference is not None:command+=['-MenuReference',str(menu_reference)]
     p=subprocess.run(command,capture_output=True,encoding='utf-8',errors='replace',timeout=12,
                      creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     if p.returncode:raise RuntimeError('capture_failed:'+p.stderr[-1000:])

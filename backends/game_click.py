@@ -13,6 +13,8 @@ class GameClickEvidence(ClickEvidence):
     recognizer: str = ''
     executable_path: str = ''
     digit: str = ''
+    selection_observer_sha256: str = ''
+    custom_selection_origin_sha256: str = ''
 
 class GameClickPort(WindowsClickPort):
     def __init__(self,observer,binding,executable_path,abort_event):
@@ -99,10 +101,42 @@ class GameClickBroker(SingleClickBroker):
 
     def validate_context(self):
         e=self.evidence
+        if e.operation=='begin_custom_selection' and (len(e.selection_observer_sha256)!=64 or any(x not in '0123456789abcdef'for x in e.selection_observer_sha256)):
+            raise NativeUnavailable('yixing_selection_confirmation_not_implemented')
         # First supported software transition. Unrecognized room/battle states do not act.
         selection=(e.scene=='custom_selection' and e.operation=='confirm_custom_selection' and e.recognizer=='custom-selection-glyphs/1')
         keypad=(e.scene=='room_keypad' and e.operation=='room_code_digit' and e.recognizer=='room-keypad-glyphs/1' and len(e.digit)==1 and e.digit in '0123456789')
-        if (e.context!='custom_setup' or not (selection or keypad)
+        empty_lobby=(e.scene=='empty_custom_lobby' and e.operation in ('open_ai_settings','open_empty_slot_menu','open_bot_selection','open_room_settings')
+                     and e.recognizer=='empty-custom-lobby-glyphs/1' and e.no_other_humans_verified is True)
+        guidance=(e.scene=='guidance_settings' and e.operation=='return_from_guidance_settings'
+                  and e.recognizer=='guidance-settings-glyphs/1')
+        bot_lobby=(e.scene=='custom_lobby_with_bots' and e.operation=='open_room_settings'
+                   and e.recognizer=='custom-lobby-bots-glyphs/1' and e.no_other_humans_verified is True)
+        options=(e.scene=='room_options' and e.operation in ('select_xingyao_bot_difficulty','close_verified_room_options')
+                 and e.recognizer=='room-options-glyphs/1')
+        fill=(e.scene=='custom_lobby_fill' and e.operation in ('open_empty_slot_menu','add_room_bot')
+              and e.recognizer=='custom-lobby-fill-glyphs/1' and e.no_other_humans_verified is True)
+        full_lobby=(e.scene=='full_bot_custom_lobby' and e.operation in ('open_room_settings','begin_custom_selection')
+                    and e.recognizer=='full-bot-lobby-glyphs/1' and e.no_other_humans_verified is True)
+        encyclopedia=(e.scene=='encyclopedia_overlay' and e.operation=='close_encyclopedia' and e.recognizer=='encyclopedia-overlay-glyphs/1')
+        battle_navigation=(e.scene=='battle_controls' and e.operation=='open_battle_settings' and e.recognizer=='battle-controls-glyphs/1')
+        battle_settings=(e.scene=='battle_settings' and e.operation=='request_exit_custom_battle' and e.recognizer=='battle-settings-glyphs/1')
+        exit_confirmation=(e.scene=='exit_confirmation' and e.operation=='confirm_exit_custom_battle' and e.recognizer=='custom-exit-confirmation-glyphs/1')
+        ended=(e.scene=='ended_battle' and e.operation=='leave_ended_custom_battle' and e.recognizer=='ended-battle-glyphs/1')
+        results=(e.scene=='custom_results' and e.operation=='return_to_lobby_from_results' and e.recognizer=='custom-results-glyphs/1')
+        main_hub=((e.scene,e.operation) in (('main_hub','open_chess_player_collection'),('main_hub_modes','open_game_mode_selection')) and e.recognizer=='main-hub-glyphs/1')
+        collection=(e.scene=='chess_collection' and e.operation=='open_yixing_details' and e.recognizer=='chess-collection-glyphs/1')
+        details=(e.scene=='yixing_details' and e.operation=='inspect_owned_yixing_skills' and e.recognizer=='yixing-details-glyphs/1')
+        skill_tab=(e.scene=='yixing_skill_tab' and e.operation=='inspect_yixing_ability_text' and e.recognizer=='yixing-skill-tab-glyphs/1')
+        passive_details=(e.scene=='yixing_ability_tooltip' and e.operation=='view_yixing_passive_details' and e.recognizer=='yixing-ability-tooltip-glyphs/1')
+        secret_rules=(e.scene=='yixing_rules_secret' and e.operation=='inspect_yixing_secret_rules' and e.recognizer=='yixing-rules-secret-glyphs/1')
+        reward_rules=(e.scene=='yixing_secret_reward' and e.operation=='inspect_yixing_reward_rules' and e.recognizer=='yixing-secret-reward-glyphs/1')
+        collection_back=(e.scene in ('encyclopedia_back','yixing_details_back','chess_collection_back')
+                         and e.operation=='return_from_'+e.scene[:-5] and e.recognizer==e.scene+'-glyphs/1')
+        chess_choice=((e.scene,e.operation) in (('yixing_character_choice','select_owned_yixing'),('yixing_character_confirm','confirm_yixing_selection'))
+                      and e.recognizer==e.scene+'-glyphs/1' and e.no_other_humans_verified is True
+                      and len(e.custom_selection_origin_sha256)==64 and all(x in '0123456789abcdef'for x in e.custom_selection_origin_sha256))
+        if (e.context!='custom_setup' or not (selection or keypad or empty_lobby or guidance or bot_lobby or options or fill or full_lobby or encyclopedia or battle_navigation or battle_settings or exit_confirmation or ended or results or main_hub or collection or details or skill_tab or passive_details or secret_rules or reward_rules or collection_back or chess_choice)
                 or len(e.frame_sha256)!=64 or any(x not in '0123456789abcdef' for x in e.frame_sha256)
                 or e.binding.class_name!='UnityWndClass' or not e.executable_path.casefold().endswith('\\wxq.exe')):
             raise NativeUnavailable('unsupported_or_unproven_game_transition')
