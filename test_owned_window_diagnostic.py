@@ -86,6 +86,7 @@ class DiagnosticTests(unittest.TestCase):
         suite.ending, suite.current_broker = True, Mock()
         for name in ("begin_phase", "check_rejection", "poll_hold", "complete_phase"):
             getattr(suite, name)()
+        suite.poll_input_ready({})
         suite.current_broker.assert_not_called()
 
     def test_report_failure_does_not_skip_cleanup_or_console_evidence(self):
@@ -179,6 +180,130 @@ class DiagnosticTests(unittest.TestCase):
             self.assertEqual(port.submission_outcome, "incomplete_batch")
             port.user.SendInput.assert_called_once()
             self.assertEqual(port.owned_release_attempt_count, 0)
+
+
+class InputReadinessTests(unittest.TestCase):
+    def test_high_bit_only_and_privacy_safe_categories(self):
+        states = {0x14: 1, 0x90: 1, 0x91: 1, 0x41: 1}
+        self.assertEqual(diagnostic.held_input_categories(lambda key: states.get(key, 0)), [])
+        states.update({1: -32768, 0x20: -32767, 0xA1: 0x8000, 0x10: 0x8000, 0x41: 0x8000})
+        self.assertEqual(diagnostic.held_input_categories(lambda key: states.get(key, 0)),
+                         ['activation.space', 'keyboard.other', 'modifier.right_shift', 'mouse.left'])
+
+    def test_long_confirmation_hold_waits_then_requires_full_quiet_interval(self):
+        gate = diagnostic.InputReadinessGate(0.0)
+        for step in range(1, 21):
+            self.assertEqual(gate.observe(['activation.space'], step, step / 20), 'waiting')
+        for step in range(21, 41):
+            self.assertEqual(gate.observe([], 21, step / 20), 'waiting')
+        self.assertEqual(gate.observe([], 21, 2.1), 'ready')
+        self.assertEqual(gate.report['observed_held_categories'], ['activation.space'])
+        self.assertEqual(gate.report['last_held_categories'], [])
+
+    def test_short_press_or_motion_between_samples_resets_countdown(self):
+        gate = diagnostic.InputReadinessGate(0.0)
+        for step in range(1, 20):
+            self.assertEqual(gate.observe([], 10, step / 20), 'waiting')
+        self.assertEqual(gate.observe([], 11, 1.0), 'waiting')
+        for step in range(21, 40):
+            self.assertEqual(gate.observe([], 11, step / 20), 'waiting')
+        self.assertEqual(gate.observe([], 11, 2.05), 'ready')
+        self.assertEqual(gate.report['quiet_resets'], 1)
+
+    def test_ui_stall_does_not_count_as_quiet_and_deadline_never_extends(self):
+        gate = diagnostic.InputReadinessGate(0.0)
+        gate.observe([], 10, 0.05)
+        self.assertEqual(gate.observe([], 10, 2.0), 'waiting')
+        self.assertEqual(gate.report['quiet_seconds'], 0)
+        self.assertEqual(gate.observe([], 10, 15.0), 'timed_out')
+        held = diagnostic.InputReadinessGate(0.0)
+        for step in range(1, 300):
+            self.assertEqual(held.observe(['mouse.left'], step, step / 20), 'waiting')
+        self.assertEqual(held.observe([], 300, 15.0), 'timed_out')
+
+    def suite(self):
+        suite = diagnostic.Suite.__new__(diagnostic.Suite)
+        suite.ending, suite.index = False, 1
+        suite.active = dict(status='waiting_for_input_ready')
+        suite.result, suite.brokers = {}, []
+        suite.root, suite.status, suite.save, suite.fail = Mock(), Mock(), Mock(), Mock()
+        suite.evidence = Mock()
+        suite.readiness = diagnostic.InputReadinessGate(0.0)
+        suite.input_probe = Mock()
+        suite.input_probe.sample.return_value = ([], 5)
+        return suite
+
+    def test_timeout_focus_loss_and_cancel_never_construct_broker(self):
+        for error in (None, native.NativeUnavailable('prearm_owned_window_lost_foreground'),
+                      native.NativeUnavailable('prearm_input_marker_unavailable')):
+            suite = self.suite()
+            suite.input_probe.sample.side_effect = error
+            with patch.object(diagnostic.time, 'monotonic', return_value=16.0), \
+                    patch.object(native, 'SingleClickBroker', side_effect=AssertionError('No arm allowed')) as broker:
+                suite.poll_input_ready(suite.active)
+            suite.fail.assert_called_once()
+            broker.assert_not_called()
+            self.assertEqual(suite.brokers, [])
+        suite = self.suite()
+        suite.ending = True
+        suite.poll_input_ready(suite.active)
+        suite.input_probe.sample.assert_not_called()
+        suite.ending = False
+        suite.poll_input_ready(dict(status='waiting_for_input_ready'))  # Stale phase callback.
+        suite.input_probe.sample.assert_not_called()
+
+    def test_ready_transition_dispatches_once_and_final_race_refuses(self):
+        suite = self.suite()
+        for step in range(1, 22):
+            suite.readiness.observe([], 5, step / 20)
+        suite.begin_phase = Mock()
+        phase = suite.active
+        with patch.object(diagnostic.time, 'monotonic', return_value=1.1):
+            suite.poll_input_ready(phase)
+            suite.poll_input_ready(phase)
+        suite.begin_phase.assert_called_once()
+        self.assertEqual(phase['status'], 'arming')
+
+        for held, marker in ((['mouse.left'], 5), ([], 6)):
+            suite = self.suite()
+            suite.active['status'] = 'arming'
+            for step in range(1, 22):
+                suite.readiness.observe([], 5, step / 20)
+            suite.input_probe.sample.return_value = (held, marker)
+            with patch.object(diagnostic.time, 'monotonic', return_value=1.15), \
+                    patch.object(native, 'SingleClickBroker', side_effect=AssertionError('No arm allowed')) as broker:
+                diagnostic.Suite.begin_phase(suite)
+            broker.assert_not_called()
+            self.assertEqual(suite.brokers, [])
+            self.assertEqual(str(suite.fail.call_args.args[0]), 'input_changed_before_arming')
+
+    def test_identity_query_stall_requires_new_quiet_interval_before_construction(self):
+        suite = self.suite()
+        suite.active['status'] = 'arming'
+        for step in range(1, 22):
+            suite.readiness.observe([], 5, step / 20)
+        clock = {'now': 1.1}
+        def slow_identity():
+            clock['now'] = 2.0
+            return Mock()
+        suite.evidence.side_effect = slow_identity
+        with patch.object(diagnostic.time, 'monotonic', side_effect=lambda: clock['now']), \
+                patch.object(native, 'SingleClickBroker', side_effect=AssertionError('Must not arm')) as broker:
+            suite.begin_phase()
+        broker.assert_not_called()
+        self.assertEqual(str(suite.fail.call_args.args[0]), 'input_changed_before_arming')
+
+    def test_diagnostic_open_refuses_held_input_before_native_guard_or_submission(self):
+        port = DiagnosticTests().port()
+        port.user.GetAsyncKeyState.side_effect = lambda key: 0x8000 if key == 0x20 else 0
+        token = dict(known=True, app_container=False, elevated=False, ui_access=False)
+        with patch.object(diagnostic, 'token_metadata', return_value=token), \
+                patch.object(native.WindowsClickPort, 'open', side_effect=AssertionError('Guard must not open')) as opened:
+            with self.assertRaisesRegex(native.NativeUnavailable, '^preexisting_held_input$'):
+                port.open(Mock())
+        self.assertEqual(port.open_input_precheck['held_categories'], ['activation.space'])
+        opened.assert_not_called()
+        port.user.SendInput.assert_not_called()
 
 
 if __name__ == "__main__":

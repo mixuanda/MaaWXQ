@@ -1,9 +1,11 @@
 # Owned-window diagnostic: one operator entry
 
-**All native stages remain unverified.** The integrator reviewed code and ran
-offline checks only. No real hotkey, click, held-button release or game test was
-performed for this revision. This command is the stable entry; earlier standalone
-probes are not required by this procedure.
+**This readiness revision has no new live input evidence.** The previous entry's
+2026-10-18 16:12 UTC report passed deadline rejection in a normal user process,
+then stopped before click submission with `preexisting_held_input`. It did not
+identify the held key. No real click, physical emergency chord or held-button
+release has passed. This command is the stable entry; earlier standalone probes
+are not required by this procedure.
 
 From the repository directory in an ordinary **non-administrator Windows
 PowerShell**, use the existing Python installation:
@@ -22,9 +24,21 @@ If preflight or any stage fails, return its report rather than retrying.
 
 Keep the owned diagnostic window visible. For each stage, read the instructions,
 tick its initially unchecked confirmation, and press **Confirm and run this phase
-once**. Release mouse buttons/keys and stop moving during the 650 ms arming delay.
+once**. Release every mouse button and key, then keep still. A visible countdown
+waits for all sampled inputs to be up and the session input marker to stay
+unchanged for one full second. It lists any still-held input categories so you can
+release them yourself. This unarmed wait lasts at most 15 seconds after confirmation.
+Motion or other input restarts the one-second countdown without extending that
+absolute limit. A polling gap over 250 ms also restarts the quiet interval.
 Later stages never arm automatically. **Stop and save report** or closing the
 window stops the suite; no queued phase may run after stopping.
+
+This wait is read-only: it does not open input guards, take an input lease, send
+input or force key/button releases. It stops on lost foreground, unavailable
+input-marker information or timeout. It rechecks immediately before constructing
+the broker, and the diagnostic port checks held categories again before the
+production port's unchanged check. Input arriving in the final race can still
+cause a safe refusal. No failed arm or submission is retried automatically.
 
 | Stage | Your action | Evidence required to pass |
 | --- | --- | --- |
@@ -65,6 +79,17 @@ cleanup results. It logs only the named test keys or the category `other`; no
 typed text, arbitrary key codes, pointer paths, screenshots or account data are
 collected. Native event insertion counts alone never pass a delivery stage.
 
+`readiness_revision=bounded-release-and-quiet/1` adds a per-phase `input_readiness`
+summary: the wait/quiet durations, sample/reset counts, observed category union
+and final held categories. Named categories identify mouse buttons, modifiers,
+Enter/Space/Escape and lock keys; every other key is only `keyboard.other`.
+There is no per-key timeline, text, arbitrary virtual-key code or pointer path.
+`open_input_precheck` records the categories sampled just before opening the real
+guard. If the production guard refuses after that clear sample, a separately
+labeled later sample must not be treated as the exact original refusal cause.
+The last-input timestamp is used only for inequality comparisons in memory;
+it is not a globally ordered event clock and is not retained in the report.
+
 All five accepted stages and complete cleanup are required for
 `all_phases_passed=true`. Early failure saves a partial report and leaves later
 stages `not_run`. A report-write failure also prevents an all-passed result.
@@ -83,8 +108,11 @@ Integration corrected false-positive focus/receipt acceptance, post-stop callbac
 release-before-prompt timing, report storage and write-error cleanup. Fake API and
 report tests verify those paths without loading real Windows DLLs. They do not
 certify native ABI, Tk/Windows message delivery or operation in a normal process.
-The [nine focused offline checks](../test_owned_window_diagnostic.py) and 31
-existing broker checks pass (40 total), with real Windows DLL loading forbidden.
+The [focused offline checks](../test_owned_window_diagnostic.py) include long-held
+confirmation inputs, high-bit semantics, privacy-safe categories, quiet-window
+resets, timeout, focus loss, canceled/stale callbacks, and final input races.
+They run with real Windows DLL loading forbidden. The production broker is byte
+identical to the previously reviewed version; native evidence remains necessary.
 
 Split DOWN submission can race the inherited last-input marker, which can also
 observe our own injected event. Such revocation fails the test; the guard is not

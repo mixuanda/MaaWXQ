@@ -30,6 +30,98 @@ PHASES = (
     ("owned_release", "Release only our held button", "After the blue target says DOWN: press and HOLD RIGHT SHIFT. Keep holding it until asked to release it. Our left button must release while your Right Shift stays down."),
 )
 
+PREARM_TIMEOUT_SECONDS = 15.0
+PREARM_QUIET_SECONDS = 1.0
+PREARM_POLL_MS = 50
+PREARM_MAX_SAMPLE_GAP_SECONDS = 0.25
+
+
+def held_input_categories(get_key_state):
+    """Same high-bit/all-VK predicate as the broker; never retain text/key codes."""
+    names = {1: "mouse.left", 2: "mouse.right", 4: "mouse.middle", 5: "mouse.x1", 6: "mouse.x2",
+             0x10: "modifier.shift", 0x11: "modifier.ctrl", 0x12: "modifier.alt",
+             0xA0: "modifier.left_shift", 0xA1: "modifier.right_shift",
+             0xA2: "modifier.left_ctrl", 0xA3: "modifier.right_ctrl",
+             0xA4: "modifier.left_alt", 0xA5: "modifier.right_alt",
+             0x5B: "modifier.left_win", 0x5C: "modifier.right_win",
+             0x0D: "activation.enter", 0x20: "activation.space", 0x1B: "control.escape",
+             0x14: "lock.caps", 0x90: "lock.num", 0x91: "lock.scroll"}
+    # No GetKeyState toggle bits, ToUnicode, key names for text keys, or key-up.
+    categories = {names.get(code, "keyboard.other") for code in range(1, 256)
+                  if get_key_state(code) & 0x8000}
+    for modifier in ("shift", "ctrl", "alt"):
+        if categories & {"modifier.left_" + modifier, "modifier.right_" + modifier}:
+            categories.discard("modifier." + modifier)  # Avoid generic/side aliases in the report.
+    return sorted(categories)
+
+
+class PrearmInputProbe:
+    """Read-only, foreground-owned sampling. No port, hooks, lease or input."""
+    def __init__(self, widget_hwnd):
+        self.user = c.WinDLL("user32", use_last_error=True)
+        class LastInput(c.Structure):
+            _fields_ = [("cbSize", w.UINT), ("dwTime", w.DWORD)]
+        self.LastInput = LastInput
+        for name, arguments, result in (
+            ("GetAsyncKeyState", [c.c_int], c.c_short),
+            ("GetLastInputInfo", [c.POINTER(LastInput)], w.BOOL),
+            ("GetForegroundWindow", [], w.HWND),
+            ("GetAncestor", [w.HWND, w.UINT], w.HWND),
+            ("GetWindowThreadProcessId", [w.HWND, c.POINTER(w.DWORD)], w.DWORD),
+        ):
+            function = getattr(self.user, name)
+            function.argtypes, function.restype = arguments, result
+        self.hwnd = int(self.user.GetAncestor(widget_hwnd, 2) or 0)
+        pid = w.DWORD()
+        if (not self.hwnd or not self.user.GetWindowThreadProcessId(self.hwnd, c.byref(pid))
+                or pid.value != os.getpid()):
+            raise native.NativeUnavailable("prearm_owned_window_required")
+
+    def sample(self):
+        if int(self.user.GetForegroundWindow() or 0) != self.hwnd:
+            raise native.NativeUnavailable("prearm_owned_window_lost_foreground")
+        held = held_input_categories(self.user.GetAsyncKeyState)
+        marker = self.LastInput(c.sizeof(self.LastInput), 0)
+        if not self.user.GetLastInputInfo(c.byref(marker)):
+            raise native.NativeUnavailable("prearm_input_marker_unavailable")
+        if int(self.user.GetForegroundWindow() or 0) != self.hwnd:
+            raise native.NativeUnavailable("prearm_owned_window_lost_foreground")
+        return held, int(marker.dwTime)  # Marker stays in memory, never in JSON.
+
+
+class InputReadinessGate:
+    """Bounded pre-arm wait; observations do not spend or retry the action budget."""
+    def __init__(self, started):
+        self.started, self.last_at, self.last_marker, self.quiet_since = started, None, None, None
+        self.observed = set()
+        self.report = dict(status="waiting", timeout_seconds=PREARM_TIMEOUT_SECONDS,
+                           quiet_required_seconds=PREARM_QUIET_SECONDS, poll_ms=PREARM_POLL_MS,
+                           samples=0, quiet_resets=0, observed_held_categories=[], last_held_categories=[])
+
+    def observe(self, held, marker, now):
+        elapsed = now - self.started
+        self.observed.update(held)
+        self.report.update(samples=self.report["samples"] + 1, elapsed_seconds=elapsed,
+                           observed_held_categories=sorted(self.observed), last_held_categories=list(held))
+        # Absolute timeout, including UI stalls; successful-looking late samples cannot arm.
+        if elapsed < 0 or elapsed >= PREARM_TIMEOUT_SECONDS:
+            self.report["status"] = "timed_out"
+            return "timed_out"
+        changed = self.last_marker is not None and marker != self.last_marker
+        gap = self.last_at is not None and not 0 <= now - self.last_at <= PREARM_MAX_SAMPLE_GAP_SECONDS
+        if held or changed or gap:
+            if self.quiet_since is not None:
+                self.report["quiet_resets"] += 1
+            self.quiet_since = None
+        if not held and self.quiet_since is None:
+            self.quiet_since = now
+        self.last_at, self.last_marker = now, marker
+        quiet = 0.0 if self.quiet_since is None else now - self.quiet_since
+        self.report.update(quiet_seconds=quiet, remaining_seconds=PREARM_TIMEOUT_SECONDS - elapsed)
+        status = "ready" if quiet >= PREARM_QUIET_SECONDS else "waiting"
+        self.report["status"] = status
+        return status
+
 
 def _read_token_metadata():
     kernel, advapi = c.WinDLL("kernel32", use_last_error=True), c.WinDLL("advapi32", use_last_error=True)
@@ -75,12 +167,24 @@ class OwnedDiagnosticPort(native.WindowsClickPort):
         self.release_samples = {}
         self.hold_raw_return = None
         self.hold_attempted = False
+        self.open_input_precheck = {}
         super().__init__(observer)
 
     def open(self, stop):
         if not ordinary_token(token_metadata()):
             raise native.NativeUnavailable("ordinary_nonadmin_noncontainer_diagnostic_required")
-        super().open(stop)
+        held = held_input_categories(self.user.GetAsyncKeyState)
+        self.open_input_precheck = {"held_categories": held, "checked_at": time.monotonic()}
+        if held:
+            raise native.NativeUnavailable("preexisting_held_input")
+        try:
+            super().open(stop)  # Keep the broker's independent, final high-bit refusal.
+        except native.NativeUnavailable as error:
+            if str(error) == "preexisting_held_input":
+                # A later sample is not proof of the exact key that triggered the guard.
+                self.open_input_precheck["broker_refused_after_clear_sample"] = True
+                self.open_input_precheck["held_categories_after_refusal"] = held_input_categories(self.user.GetAsyncKeyState)
+            raise
 
     def _diagnostic_signal(self, kind, message, flags=0, detail=0):
         # Never record typed text, arbitrary key values, pointer paths or screenshots.
@@ -249,6 +353,7 @@ class Suite:
         self.index, self.active, self.secondary = 0, None, None
         self.brokers, self.events = [], []
         self.ending = False
+        self.readiness, self.input_probe = None, None
         self.confirm = tk.BooleanVar(value=False)
         self.heading, self.instructions, self.status = tk.StringVar(), tk.StringVar(), tk.StringVar()
         tk.Label(self.root, text="Owned-window diagnostics: no game input", font=("Segoe UI", 16)).pack(pady=10)
@@ -304,13 +409,44 @@ class Suite:
             self.check.configure(state="disabled")
             self.run_button.configure(state="disabled")
             self.active = {"explicit_confirmation": True, "confirmed_at_utc": datetime.now(timezone.utc).isoformat(),
-                           "status": "arming", "event_start": len(self.events)}
+                           "status": "waiting_for_input_ready", "event_start": len(self.events)}
             self.result["phases"][PHASES[self.index][0]] = self.active
-            self.result["status"] = "phase_arming:" + PHASES[self.index][0]
+            self.result["status"] = "phase_prearm_wait:" + PHASES[self.index][0]
+            self.readiness = InputReadinessGate(time.monotonic())
+            self.active["input_readiness"] = self.readiness.report
             self.target.focus_set()  # Within the already-foreground owned window.
-            self.status.set("Release all keys/buttons and keep still. Arming after 650 ms.")
+            self.status.set("Release every key/button, then keep still for 1 second. Waiting up to 15 seconds; no input is armed.")
             self.save()  # A failed checkpoint prevents this phase from arming.
-            self.root.after(650, self.begin_phase)
+            self.root.update_idletasks()
+            self.input_probe = PrearmInputProbe(self.root.winfo_id())
+            phase = self.active
+            self.root.after(PREARM_POLL_MS, lambda: self.poll_input_ready(phase))
+        except BaseException as error:
+            self.fail(error)
+
+    def poll_input_ready(self, phase):
+        if self.ending or self.active is not phase or phase.get("status") != "waiting_for_input_ready":
+            return
+        try:
+            held, marker = self.input_probe.sample()
+            decision = self.readiness.observe(held, marker, time.monotonic())
+            record = self.readiness.report
+            if decision == "timed_out":
+                raise native.NativeUnavailable("prearm_input_readiness_timeout")
+            if decision == "ready":
+                phase["status"] = "arming"
+                self.result["status"] = "phase_arming:" + PHASES[self.index][0]
+                self.status.set("All sampled keys/buttons are up and the input marker is quiet. Running this phase once.")
+                self.save()
+                self.begin_phase()
+                return
+            if held:
+                detail = "Still held: " + ", ".join(held) + ". Release these yourself."
+            else:
+                detail = "All sampled keys/buttons are up. Keep still: %.1f s remaining." % (
+                    PREARM_QUIET_SECONDS - record["quiet_seconds"])
+            self.status.set(detail + "\nNo input is armed. Wait limit: %.1f s." % record["remaining_seconds"])
+            self.root.after(PREARM_POLL_MS, lambda: self.poll_input_ready(phase))
         except BaseException as error:
             self.fail(error)
 
@@ -339,13 +475,21 @@ class Suite:
             return
         name = PHASES[self.index][0]
         try:
+            if self.active.get("status") != "arming" or self.readiness.report.get("status") != "ready":
+                raise native.NativeUnavailable("input_readiness_required_before_arming")
             self.root.update_idletasks()
             hold = name in ("emergency", "owned_release")
             cls = OwnedHoldBroker if hold else native.SingleClickBroker
             limits = {"max_seconds": 4.0, "max_age": 5.0} if hold else {}
             if name == "deadline":
                 limits = {"max_seconds": 0.20}
-            broker = cls(self.evidence(), observer=inspect_window, enabled=True, port_factory=OwnedDiagnosticPort, **limits)
+            evidence = self.evidence()
+            # Layout/identity queries can take time. Recheck after those reads,
+            # immediately before broker construction, rather than before them.
+            held, marker = self.input_probe.sample()
+            if self.readiness.observe(held, marker, time.monotonic()) != "ready":
+                raise native.NativeUnavailable("input_changed_before_arming")
+            broker = cls(evidence, observer=inspect_window, enabled=True, port_factory=OwnedDiagnosticPort, **limits)
             self.brokers.append(broker)
             self.active["broker_index"] = len(self.brokers) - 1
             broker.arm()
@@ -497,6 +641,7 @@ class Suite:
                     and (port.thread is None or not port.thread.is_alive())))),
                 "cleanup_errors": list(broker.cleanup_errors) + list(port.cleanup_errors if port else []),
                 "audit": port.audit_snapshot() if port else [],
+                "open_input_precheck": dict(port.open_input_precheck) if port else {},
                 "release_samples": dict(port.release_samples) if port else {},
                 "release_attempts": getattr(port, "owned_release_attempt_count", 0),
                 "release_raw_return": getattr(port, "owned_release_last_raw_return", None)}
@@ -557,7 +702,7 @@ class Suite:
                 self.result.setdefault("harness_cleanup_errors", []).append(str(error))
         if self.active is not None and "broker_index" in self.active:
             self.active.update(self.broker_record(self.current_broker()))
-        if self.active is not None and self.active.get("status") in ("arming", "running"):
+        if self.active is not None and self.active.get("status") in ("waiting_for_input_ready", "arming", "running"):
             self.active["status"] = "interrupted"
         self.result.update(status=status, finished_at_utc=datetime.now(timezone.utc).isoformat(),
             all_phases_passed=all(self.result["phases"][key].get("status") == "passed" for key, _, _ in PHASES),
@@ -595,7 +740,8 @@ def main():
     output_dir = ROOT / "local" / "owned-window-diagnostic"
     output_dir.mkdir(parents=True, exist_ok=True)
     output = output_dir / ("owned-window-diagnostic-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ") + ".json")
-    result = {"schema": "maawxq-owned-window-diagnostic/2", "pid": os.getpid(), "status": "input_disabled",
+    result = {"schema": "maawxq-owned-window-diagnostic/2", "readiness_revision": "bounded-release-and-quiet/1",
+        "pid": os.getpid(), "status": "input_disabled",
         "window_created": False, "all_phases_passed": False, "target_scope": "current_process_owned_fixed_widgets",
         "game_input_count": 0, "game_gate_passed": False, "keyboard_injection_count": 0,
         "security_changes": 0, "privilege_changes": 0, "phases": {key: {"status": "not_run"} for key, _, _ in PHASES}}
