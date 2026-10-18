@@ -85,11 +85,22 @@ that JSON. Keep reports private rather than adding them to a public commit.
 
 The report includes source hashes, token status, native counts, real widget
 events, limited hook/hotkey evidence, timing, preserved Shift state and all broker
-cleanup results. It logs only the named test keys or the category `other`; no
-typed text, arbitrary key codes, pointer paths, screenshots or account data are
-collected. Native event insertion counts alone never pass a delivery stage.
+cleanup results. The ongoing audit logs named test keys or the category `other`.
+A separate `first_foreign_keyboard` record retains at most one foreign event's
+virtual key, scan code, flags, native tick, local monotonic time and full-tag
+comparison. It is captured only after the existing stop decision; it contains no
+text or raw tag, and the low-level hook does not identify an originating process.
+Keep this diagnostic report private. No pointer paths, screenshots or account
+data are collected. Native insertion counts alone never pass a delivery stage.
 
-`ui_revision=chinese-current-step/2` records the Chinese current-step interface.
+`ui_revision=chinese-current-step-stop/3` records the Chinese current-step
+interface with stopped-hold interruption handling. An unexpected stop immediately
+ends hold prompts and polling; queued DOWN events cannot ask for a test key after
+that stop. Only the expected physical trigger delivered after real widget DOWN
+and no later than the recorded stop permits continued observation of release.
+Late correct keys cannot rescue an earlier foreign-input stop. This integration
+passes 77 focused offline checks with native API/Tk creation blocked; it adds no
+live input evidence and leaves acceptance, readiness and the broker unchanged.
 `automatic_group_consent` records the single approval for the first three checks;
 each phase records its confirmation mode, original confirmation time and phase
 start time. Group-approved phases are not reported as individually confirmed.

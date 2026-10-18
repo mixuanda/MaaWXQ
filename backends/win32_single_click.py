@@ -194,6 +194,9 @@ class WindowsClickPort:
     def _diagnostic_mouse_tag(self, message, flags, expected, observed):
         """Passive owned-test evidence only; never an input-acceptance predicate."""
 
+    def _diagnostic_foreign_keyboard(self, message, vk, scan, flags, native_time, full_tag_equal):
+        """Optional first-foreign-event metadata; called only AFTER unchanged stop."""
+
     def foreground(self):
         return int(self.user.GetForegroundWindow() or 0)
 
@@ -253,6 +256,9 @@ class WindowsClickPort:
                         self._diagnostic_signal("keyboard", int(message), int(item.flags), int(item.vk))
                         if not (item.flags & 0x10 and item.extra == self.token):
                             stop("user_or_foreign_keyboard_input")
+                            self._diagnostic_foreign_keyboard(int(message), int(item.vk), int(item.scan),
+                                                              int(item.flags), int(item.time),
+                                                              bool(item.extra == self.token))
                 except Exception:
                     self.error = "keyboard_guard_callback_failed"
                     stop(self.error)

@@ -18,7 +18,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_BROKER_CANONICAL_HASH = "4c0e382c34601ea609e319e331ef1ca1d6ea9106e69866b96b3bbfa1d2075724"
+EXPECTED_BROKER_CANONICAL_HASH = "fc1cec991f02acb4f7de81e816188d10679a1ac0c82e5cb55c9e417e2e0e5701"
 sys.path.insert(0, str(ROOT))
 import backends.win32_single_click as native
 from window_identity import find_windows, inspect_window
@@ -209,6 +209,7 @@ class OwnedDiagnosticPort(native.WindowsClickPort):
     def __init__(self, observer):
         self.audit = deque(maxlen=128)
         self.audit_lock = threading.Lock()
+        self.first_foreign_keyboard = None
         self.release_samples = {}
         self.hold_raw_return = None
         self.hold_attempted = False
@@ -287,6 +288,21 @@ class OwnedDiagnosticPort(native.WindowsClickPort):
             item.update(id=message, modifiers=detail & 0xFFFF, vk=(detail >> 16) & 0xFFFF)
         with self.audit_lock:
             self.audit.append(item)
+
+    def _diagnostic_foreign_keyboard(self, message, vk, scan, flags, native_time, full_tag_equal):
+        # One event only, in a bounded owned diagnostic. No text decoding/key history.
+        with self.audit_lock:
+            if self.first_foreign_keyboard is None:
+                self.first_foreign_keyboard = {
+                    "message": message, "vk": vk, "scan_code": scan, "flags": flags,
+                    "native_tick_ms": native_time, "observed_monotonic": time.monotonic(),
+                    "injected": bool(flags & 0x10), "lower_integrity_injected": bool(flags & 2),
+                    "extended": bool(flags & 1), "key_up": bool(flags & 0x80),
+                    "full_tag_equal": full_tag_equal, "origin_process": "not_provided_by_low_level_hook"}
+
+    def foreign_keyboard_snapshot(self):
+        with self.audit_lock:
+            return dict(self.first_foreign_keyboard) if self.first_foreign_keyboard is not None else None
 
     def audit_snapshot(self):
         with self.audit_lock:
@@ -439,6 +455,27 @@ def chinese_prompt(value):
     return "\n".join(lines) or str(value)
 
 
+def unexpected_hold_stop(name, broker, audit, events):
+    """Only the expected real physical trigger may finish an already-stopped hold."""
+    if not broker.stopped.is_set():
+        return None
+    keys = ("Ctrl", "Alt", "F9") if name == "emergency" else ("RightShift",)
+    keyboard = [e for e in audit if e["kind"] == "keyboard"]
+    if any(e["injected"] for e in keyboard):
+        return "foreign_injected_keyboard"
+    if any(e["key"] not in keys for e in keyboard):
+        return "unexpected_physical_key"
+    allowed_reasons = ("user_or_foreign_keyboard_input", "emergency_hotkey") if name == "emergency" else ("user_or_foreign_keyboard_input",)
+    if broker.stop_reason not in allowed_reasons:
+        return "unexpected_stop:" + str(broker.stop_reason)
+    first = next((e for e in keyboard if e["message"] in (0x100, 0x104) and e["key"] in keys), None)
+    down = next((e for e in events if e["kind"] == "down"), None)
+    if (first is None or down is None or broker.stop_monotonic is None
+            or not down["at"] < first["at"] <= broker.stop_monotonic):
+        return "stopped_before_expected_physical_trigger"
+    return None  # Keep observing the real chord/key-up; never rearm or submit again.
+
+
 class Suite:
     def __init__(self, result, output):
         import tkinter as tk
@@ -531,6 +568,8 @@ class Suite:
             " 次 / 松开：" + str(sum(e["kind"] == "up" for e in events)) + " 次")
         if not self.ending and kind == "down":
             name = PHASES[self.index][0]
+            if name in ("emergency", "owned_release") and self.abort_unexpected_hold_stop():
+                return
             if name == "emergency":
                 self.status.set("当前状态：蓝色区域已按下\n下一步：现在同时按 Ctrl+Alt+F9，然后松开这三个键。\n"
                                 "需要你操作：现在按键；不要碰鼠标。\nNOW press Ctrl+Alt+F9 together, then release all three.")
@@ -713,6 +752,8 @@ class Suite:
             else:
                 broker.hold_once()
                 self.active["hold_submitted_at"] = time.monotonic()
+                if self.abort_unexpected_hold_stop():
+                    return
                 self.status.set("当前状态：等待蓝色区域就绪\n下一步：等“现在按键”的提示。\n"
                                 "需要你操作：暂时不需要，不要碰鼠标。\nWait for the NOW prompt; do not touch the mouse.")
                 self.root.after(10, self.poll_hold)
@@ -767,10 +808,28 @@ class Suite:
     def phase_events(self):
         return self.events[self.active["event_start"]:]
 
+    def abort_unexpected_hold_stop(self):
+        if self.ending:
+            return True
+        if self.active is None or "broker_index" not in self.active:
+            return False
+        broker = self.current_broker()
+        reason = unexpected_hold_stop(PHASES[self.index][0], broker,
+                                      broker.port.audit_snapshot(), self.phase_events())
+        if reason is None:
+            return False
+        self.active["interruption"] = reason
+        self.active["interrupted_at"] = time.monotonic()
+        self.fail(native.NativeUnavailable("owned_hold_interrupted:" + reason))
+        self.status.set("当前状态：检测到其他输入，本项已停止\n下一步：松开所有按键，等待检查结果。\n需要你操作：不用再按测试键，也不要重复点击。")
+        return True
+
     def poll_hold(self):
         if self.ending:
             return
         try:
+            if self.abort_unexpected_hold_stop():
+                return
             broker, row = self.current_broker(), self.active
             port, now = broker.port, time.monotonic()
             name = PHASES[self.index][0]
@@ -846,6 +905,7 @@ class Suite:
                     and (port.thread is None or not port.thread.is_alive())))),
                 "cleanup_errors": list(broker.cleanup_errors) + list(port.cleanup_errors if port else []),
                 "audit": port.audit_snapshot() if port else [],
+                "first_foreign_keyboard": port.foreign_keyboard_snapshot() if port else None,
                 "open_input_precheck": dict(port.open_input_precheck) if port else {},
                 "ownership_diagnostics": port.ownership_snapshot() if port else {},
                 "release_samples": dict(port.release_samples) if port else {},
@@ -950,7 +1010,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     output = output_dir / ("owned-window-diagnostic-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ") + ".json")
     result = {"schema": "maawxq-owned-window-diagnostic/2", "readiness_revision": "bounded-release-and-quiet/1",
-        "ownership_diagnostics_revision": "full-width-mouse-tags/1", "ui_revision": "chinese-current-step/2",
+        "ownership_diagnostics_revision": "full-width-mouse-tags/1", "ui_revision": "chinese-current-step-stop/3",
         "pid": os.getpid(), "status": "input_disabled",
         "window_created": False, "all_phases_passed": False, "target_scope": "current_process_owned_fixed_widgets",
         "game_input_count": 0, "game_gate_passed": False, "keyboard_injection_count": 0,
