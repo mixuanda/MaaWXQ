@@ -1,8 +1,9 @@
 # One visible purchase and batched OCR
 
-See [recognition repair and actual first purchase](PURCHASE_RECOGNITION_REPAIR.md)
-for the later real purchase evidence and the remaining automatic postcondition
-limitation. The portable repair exposes candidates without promoting OCR hits.
+See [V8 automatic purchase evidence](hand-appearance-evidence.md) for the later
+spatially verified Sun Bin purchase and its specialized hand-binding API.
+[The earlier recognition repair](PURCHASE_RECOGNITION_REPAIR.md) preserves the
+Yao transaction's original visual-only result. Deployment remains unverified.
 
 V5/V6 continuation. No game input was run during this implementation. This
 small handler does not depend on global combat statistics, a complete unit

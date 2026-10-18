@@ -5,6 +5,10 @@ The V5 screen producer is connected to the persistent Advisor through
 `runtime.strategy_bridge.ScreenAdvisorBridge`. This is a local integration
 milestone. It has not executed a strategy-generated game action.
 
+That statement describes the original V5 bridge milestone. The later
+[V8 specialized purchase producer](hand-appearance-evidence.md) automatically
+verified one Sun Bin purchase; deployment and a complete match remain unverified.
+
 ## What the real replay established
 
 One previously captured battle image produced OCR candidates for round 4,

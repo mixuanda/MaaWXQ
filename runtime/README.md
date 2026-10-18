@@ -146,3 +146,14 @@ confirmed actual Yi Xing selection and entry into battle, while the packaged
 watcher still reports its final confirmation postcondition as pending until
 independently recognized. This integration did not run another selection or
 purchase and does not reinterpret the current talent overlay as a buy phase.
+
+## V8 automatic purchase postcondition
+
+The later control-worker run automatically verified one Sun Bin purchase:
+energy 6 to 3 plus a spatially matched new hand card, using the unchanged
+PurchaseHandler. [The portable hand matcher and binding API](../docs/hand-appearance-evidence.md)
+preserve the actual preaction/after source hashes, predicates and five-second
+freshness gate. This specialized two-to-three-card layout is not a generic
+inventory reader. A subsequent hand-card click opened details; deployment
+remains unverified. Private controllers, images, profiles and retention/deletion
+code are excluded. Integration itself sent no game input.

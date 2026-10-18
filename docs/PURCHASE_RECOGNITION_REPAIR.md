@@ -1,5 +1,9 @@
 # Purchase recognition repair and first actual purchase
 
+This records the earlier Yao/OCR milestone. A later Sun Bin purchase automatically
+passed the spatial hand and currency verifier; see [V8 evidence and API](hand-appearance-evidence.md).
+The original Yao receipt remains visual-only, and deployment is still pending.
+
 The control worker submitted one actual purchase of Yao in a five-bot Xingyao
 custom game. It visually inspected original before/after client images and
 confirmed energy 6 to 3 and a new Yao card in hand. The native callback completed
