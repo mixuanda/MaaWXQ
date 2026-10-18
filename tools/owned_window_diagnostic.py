@@ -23,12 +23,25 @@ sys.path.insert(0, str(ROOT))
 import backends.win32_single_click as native
 from window_identity import find_windows, inspect_window
 
+AUTO_PHASES = ("deadline", "click", "focus")
 PHASES = (
-    ("deadline", "Deadline rejection", "After confirmation, keep still. A delayed click must be rejected without a target event."),
-    ("click", "Actual target click", "After confirmation, keep still. One native click must deliver one DOWN and one UP to the fixed blue target."),
-    ("focus", "Focus-loss rejection", "After confirmation, keep still. A second window owned by this process will receive focus; the old target must reject input."),
-    ("emergency", "Physical emergency chord", "After the blue target says DOWN: press and release Ctrl+Alt+F9. Do not touch the mouse. The owned left button must release; a real hotkey message must arrive."),
-    ("owned_release", "Release only our held button", "After the blue target says DOWN: press and HOLD RIGHT SHIFT. Keep holding it until asked to release it. Our left button must release while your Right Shift stays down."),
+    ("deadline", "自动检查 1/3：等待后不点击 / Wait without clicking",
+     "授权后自动依次执行第 1–3 项。松开所有键和鼠标，保持静止；本项不应产生点击。\n"
+     "One approval covers checks 1–3. Release all keys/buttons and keep still. This check must reject the delayed click."),
+    ("click", "自动检查 2/3：点一下蓝色区域 / One target click",
+     "自动进行，无需再次确认。请保持静止；蓝色区域应只收到一次按下和一次松开。\n"
+     "Automatic: keep still. The blue target must receive exactly one DOWN and one UP."),
+    ("focus", "自动检查 3/3：切换窗口后不点击 / Stop after focus changes",
+     "自动进行，无需再次确认。请保持静止；程序切到自己的第二个窗口，原目标必须拒绝点击。\n"
+     "Automatic: keep still. Focus moves to another owned window; the old target must reject input."),
+    ("emergency", "真人 1/2：急停组合键 / Physical emergency chord",
+     "本项稍后会请你同时按 Ctrl+Alt+F9，再松开这三个键。现在不要提前按键。\n"
+     "先点击“我准备好了”；看到“现在按键”的提示再按。\n"
+     "You will press Ctrl+Alt+F9 together. Wait for the NOW prompt."),
+    ("owned_release", "真人 2/2：保留右 Shift / Preserve physical Right Shift",
+     "本项稍后会请你按住键盘右侧 Shift。现在先不要按。\n"
+     "先点击“我准备好了”；按住后，等提示“现在松开右 Shift”再松开。不要碰鼠标。\n"
+     "You will hold RIGHT Shift until the release prompt. Do not touch the mouse."),
 )
 
 PREARM_TIMEOUT_SECONDS = 15.0
@@ -413,38 +426,97 @@ def save_report(output, result):
     temporary.replace(output)
 
 
+def chinese_prompt(value):
+    """Keep the current Chinese instruction; English remains in source/report data."""
+    lines = []
+    for line in str(value).splitlines():
+        if not any("\u4e00" <= ch <= "\u9fff" for ch in line):
+            continue
+        # Bilingual headings use this explicit separator; do not touch key names.
+        import re
+        line = re.sub(r" / [A-Za-z].*", "", line)
+        lines.append(line)
+    return "\n".join(lines) or str(value)
+
+
 class Suite:
     def __init__(self, result, output):
         import tkinter as tk
+        from tkinter import font as tkfont
         self.tk, self.result, self.output = tk, result, output
         self.root = tk.Tk()
         self.result["window_created"] = True
-        self.title = "MaaWXQ Owned Diagnostic " + str(os.getpid())
+        self.title = "MaaWXQ 自建窗口检查 " + str(os.getpid())
         self.root.title(self.title)
-        self.root.geometry("800x620+100+100")
-        self.root.resizable(False, False)
+        self.root.configure(bg="#f2f5fa")
+        # Respect Tk/Windows' current DPI; point fonts scale naturally. No OS setting changes.
+        scale = max(1.0, self.root.winfo_fpixels("1i") / 96.0)
+        screen_w, screen_h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        width, height = min(int(1000 * scale), int(screen_w * .90)), min(int(850 * scale), int(screen_h * .88))
+        self.root.geometry(f"{width}x{height}+{max(0,(screen_w-width)//2)}+{max(0,(screen_h-height)//2-20)}")
+        self.root.minsize(min(width, int(780*scale)), min(height, int(680*scale)))
+        self.root.resizable(True, True)
+        family = "Microsoft YaHei UI" if "Microsoft YaHei UI" in tkfont.families(self.root) else "Microsoft YaHei"
+        compact = height / scale < 730
+        body_size, status_size = (12, 17) if compact else (14, 20)
+        self.root.option_add("*Font", (family, body_size))
+        self.result["ui_layout"] = {"width": width, "height": height, "tk_scale": float(self.root.tk.call("tk", "scaling")),
+                                   "dpi": self.root.winfo_fpixels("1i"), "font": family, "compact": compact}
         self.index, self.active, self.secondary = 0, None, None
         self.brokers, self.events = [], []
         self.ending = False
+        self.auto_group_consent = None
         self.readiness, self.input_probe = None, None
         self.confirm = tk.BooleanVar(value=False)
-        self.heading, self.instructions, self.status = tk.StringVar(), tk.StringVar(), tk.StringVar()
-        tk.Label(self.root, text="Owned-window diagnostics: no game input", font=("Segoe UI", 16)).pack(pady=10)
-        tk.Label(self.root, textvariable=self.heading, font=("Segoe UI", 13)).pack(pady=6)
-        tk.Label(self.root, textvariable=self.instructions, wraplength=740, height=4).pack(pady=6)
-        self.target = tk.Label(self.root, text="INPUT TARGET: UP", bg="#1868a8", fg="white", width=50, height=5,
-                               relief="sunken", takefocus=True, font=("Segoe UI", 14))
-        self.target.pack(pady=12)
+        class DisplayVar(tk.StringVar):
+            def set(self, value):
+                super().set(chinese_prompt(value))
+        self.heading, self.instructions, self.status = DisplayVar(), DisplayVar(), DisplayVar()
+        panel = tk.Frame(self.root, bg="#f2f5fa")
+        panel.pack(fill="both", expand=True, padx=24, pady=16)
+        tk.Label(panel, text="自建窗口检查", font=(family, 24, "bold"), bg="#f2f5fa", fg="#11213b", anchor="w").pack(fill="x")
+        self.heading_label = tk.Label(panel, textvariable=self.heading, font=(family, body_size), bg="#f2f5fa", fg="#506176", justify="left", anchor="w")
+        self.heading_label.pack(fill="x", pady=(2,10))
+        self.status_label = tk.Label(panel, textvariable=self.status, font=(family, status_size, "bold"), bg="#ffffff", fg="#102b4d", justify="left", anchor="w", padx=18, pady=18)
+        self.status_label.pack(fill="x", pady=(0,10))
+        self.instructions_label = tk.Label(panel, textvariable=self.instructions, font=(family, body_size), bg="#f2f5fa", fg="#42556e", justify="left", anchor="w")
+        self.instructions_label.pack(fill="x", pady=(0,8))
+        self.check = tk.Checkbutton(panel, text="我同意只检查本程序自己的窗口", variable=self.confirm, bg="#f2f5fa", activebackground="#f2f5fa", anchor="w", justify="left")
+        self.check.pack(fill="x", pady=(0,6))
+        self.run_button = tk.Button(panel, text="开始自动检查", command=self.confirm_phase, font=(family, body_size+3, "bold"), bg="#1764d8", fg="white", activebackground="#0d4fae", activeforeground="white", disabledforeground="#c3cddd", relief="flat", padx=16, pady=10)
+        self.run_button.pack(fill="x", pady=(0,10))
+        self.target = tk.Label(panel, text="蓝色测试区 · 已松开（无需点击这里）", bg="#dbeafe", fg="#174a7b", height=2,
+                               relief="flat", takefocus=True, font=(family, body_size))
+        self.target.pack(fill="x", pady=(0,8))
         self.target.bind("<ButtonPress-1>", lambda e: self.target_event("down"))
         self.target.bind("<ButtonRelease-1>", lambda e: self.target_event("up"))
-        tk.Label(self.root, textvariable=self.status, wraplength=740, height=4).pack(pady=8)
-        self.check = tk.Checkbutton(self.root, text="I confirm this phase on this process's own target only.", variable=self.confirm)
-        self.check.pack(pady=4)
-        self.run_button = tk.Button(self.root, text="Confirm and run this phase once", command=self.confirm_phase, width=40)
-        self.run_button.pack(pady=5)
-        tk.Button(self.root, text="Stop and save report", command=lambda: self.finish("operator_stopped")).pack(pady=5)
-        tk.Label(self.root, text="Any physical input stops an armed broker. Holds expire within 4 seconds.\n"
-                 "Stop cleanup releases only the broker's owned left button; it never sends keyboard key-up.").pack(pady=8)
+        bottom = tk.Frame(panel, bg="#f2f5fa")
+        bottom.pack(fill="x", side="bottom")
+        self.details_frame = tk.Frame(panel, bg="#f2f5fa")
+        self.details = tk.Text(self.details_frame, height=5, font=("Consolas", 10), wrap="word", state="disabled")
+        self.details.pack(fill="both", expand=True)
+        self.details_visible = False
+        def toggle_details():
+            self.details_visible = not self.details_visible
+            if self.details_visible:
+                self.details.configure(state="normal")
+                self.details.delete("1.0", "end")
+                self.details.insert("1.0", "报告位置：" + str(self.output) + "\n" + json.dumps(self.result, ensure_ascii=False, indent=2))
+                self.details.configure(state="disabled")
+                self.details_frame.pack(fill="both", expand=True)
+            else:
+                self.details_frame.pack_forget()
+            self.details_button.configure(text="收起技术记录" if self.details_visible else "查看技术记录")
+        self.details_button = tk.Button(bottom, text="查看技术记录", command=toggle_details, relief="flat", bg="#f2f5fa", fg="#42556e")
+        self.details_button.pack(side="left")
+        self.stop_button = tk.Button(bottom, text="停止并保存", command=lambda: self.finish("operator_stopped"), bg="#fff1f0", fg="#a52e22", relief="flat", padx=14, pady=6)
+        self.stop_button.pack(side="right")
+        def fit_text(event):
+            if event.widget is panel:
+                wrap = max(320, event.width - 40)
+                for widget in (self.heading_label, self.status_label, self.instructions_label, self.check):
+                    widget.configure(wraplength=wrap)
+        panel.bind("<Configure>", fit_text)
         self.root.protocol("WM_DELETE_WINDOW", lambda: self.finish("operator_closed"))
         self.result["status"] = "awaiting_phase_confirmation"
         self.show_phase()
@@ -454,9 +526,18 @@ class Suite:
             return
         self.events.append({"kind": kind, "at": time.monotonic(), "phase": PHASES[self.index][0]})
         events = self.phase_events()
-        self.target.configure(text="INPUT TARGET: " + ("DOWN" if kind == "down" else "UP") +
-            "\nObserved DOWN: " + str(sum(e["kind"] == "down" for e in events)) +
-            " / UP: " + str(sum(e["kind"] == "up" for e in events)))
+        self.target.configure(text="蓝色测试区：" + ("已按下" if kind == "down" else "已松开") +
+            "\n收到按下：" + str(sum(e["kind"] == "down" for e in events)) +
+            " 次 / 松开：" + str(sum(e["kind"] == "up" for e in events)) + " 次")
+        if not self.ending and kind == "down":
+            name = PHASES[self.index][0]
+            if name == "emergency":
+                self.status.set("当前状态：蓝色区域已按下\n下一步：现在同时按 Ctrl+Alt+F9，然后松开这三个键。\n"
+                                "需要你操作：现在按键；不要碰鼠标。\nNOW press Ctrl+Alt+F9 together, then release all three.")
+            elif name == "owned_release":
+                self.status.set("当前状态：蓝色区域已按下\n下一步：现在按住右侧 Shift，一直按住。\n"
+                                "需要你操作：按住，等下一条松开提示；不要碰鼠标。\nNOW HOLD RIGHT Shift until told to release.")
+
 
     def save(self):
         save_report(self.output, self.result)
@@ -466,30 +547,82 @@ class Suite:
             self.finish("all_owned_window_phases_passed")
             return
         name, title, instructions = PHASES[self.index]
-        self.heading.set(str(self.index + 1) + "/5: " + title)
-        self.instructions.set(instructions)
-        self.status.set("Review this phase, check the confirmation box, then confirm. No native stage is armed yet.")
-        self.target.configure(text="INPUT TARGET: UP")
+        passed_count = sum(row.get("status") == "passed" for row in self.result["phases"].values())
+        self.heading.set("当前第 " + str(self.index + 1) + "/5 项｜已通过 " + str(passed_count) + " 项\n" + title)
+        self.instructions.set(instructions if name not in AUTO_PHASES else
+                              "程序只检查自己的蓝色区域，不操作游戏。随时可以点“停止”。\n"
+                              "Only the owned blue target is tested. You can press Stop at any time.")
+        self.target.configure(text="蓝色测试区 · 已松开（无需点击这里）")
         self.confirm.set(False)
+        if name in AUTO_PHASES and self.auto_group_consent is not None:
+            self.check.configure(state="disabled")
+            self.run_button.configure(state="disabled")
+            self.status.set("当前状态：准备下一项自动检查\n下一步：保持静止，程序会继续。\n需要你操作：不需要。\nAutomatic checks continue; keep still.")
+            self.result["status"] = "automatic_group_next:" + name
+            self.save()
+            consent = self.auto_group_consent
+            self.root.after(750, lambda: self.start_phase(consent))
+            return
         self.check.configure(state="normal")
         self.run_button.configure(state="normal")
+        if name in AUTO_PHASES:
+            self.check.configure(text="我同意自动完成前三项检查（只操作本窗口）")
+            self.run_button.configure(text="开始自动检查 · 只需点一次")
+            self.result["status"] = "awaiting_automatic_group_confirmation"
+            self.status.set("当前状态：尚未开始\n下一步：勾选下方确认框，点击“开始自动检查”。\n需要你操作：只需确认这一次，随后保持静止。\nApprove once, then keep still.")
+        else:
+            self.check.configure(text="我已看懂当前按键说明，准备好了")
+            self.run_button.configure(text="我准备好了")
+            self.result["status"] = "awaiting_phase_confirmation:" + name
+            self.status.set("当前状态：等你准备好\n下一步：勾选确认框，点击“我准备好了”。\n需要你操作：现在只需确认，不要按测试键。\nConfirm readiness; do not press the test key yet.")
         self.save()
 
     def confirm_phase(self):
         if not self.confirm.get() or self.active is not None or self.ending:
             return
+        name = PHASES[self.index][0]
+        confirmed_at = datetime.now(timezone.utc).isoformat()
+        if name in AUTO_PHASES:
+            # One actual UI confirmation explicitly covers only these three phases.
+            if self.index != 0 or self.auto_group_consent is not None:
+                return
+            consent = {"mode": "automatic_group", "phases": list(AUTO_PHASES),
+                       "confirmed_at_utc": confirmed_at}
+            self.auto_group_consent = consent
+            self.result["automatic_group_consent"] = dict(consent)
+        else:
+            consent = {"mode": "individual_physical", "phases": [name],
+                       "confirmed_at_utc": confirmed_at}
+        self.start_phase(consent)
+
+    def start_phase(self, consent):
+        # Scheduled continuations cannot run after cancellation or overlap a phase.
+        if self.ending or self.active is not None:
+            return
+        name = PHASES[self.index][0]
+        if name not in consent.get("phases", ()):
+            return
+        if name in AUTO_PHASES:
+            if consent is not self.auto_group_consent or consent.get("mode") != "automatic_group":
+                return
+        elif consent.get("mode") != "individual_physical":
+            return
         try:
             self.check.configure(state="disabled")
             self.run_button.configure(state="disabled")
-            self.active = {"explicit_confirmation": True, "confirmed_at_utc": datetime.now(timezone.utc).isoformat(),
+            self.active = {"explicit_confirmation": True,
+                           "confirmation_mode": consent["mode"],
+                           "confirmed_individually": consent["mode"] == "individual_physical",
+                           "confirmed_at_utc": consent["confirmed_at_utc"],
+                           "phase_started_at_utc": datetime.now(timezone.utc).isoformat(),
                            "status": "waiting_for_input_ready", "event_start": len(self.events)}
-            self.result["phases"][PHASES[self.index][0]] = self.active
-            self.result["status"] = "phase_prearm_wait:" + PHASES[self.index][0]
+            self.result["phases"][name] = self.active
+            self.result["status"] = "phase_prearm_wait:" + name
             self.readiness = InputReadinessGate(time.monotonic())
             self.active["input_readiness"] = self.readiness.report
             self.target.focus_set()  # Within the already-foreground owned window.
-            self.status.set("Release every key/button, then keep still for 1 second. Waiting up to 15 seconds; no input is armed.")
-            self.save()  # A failed checkpoint prevents this phase from arming.
+            self.status.set("当前状态：等待所有按键松开\n下一步：松开按键和鼠标，保持静止 1 秒。\n需要你操作：只需松开；现在不要按测试键。\nRelease all keys/buttons and keep still for 1 second.")
+            self.save()
             self.root.update_idletasks()
             self.input_probe = PrearmInputProbe(self.root.winfo_id())
             phase = self.active
@@ -509,16 +642,16 @@ class Suite:
             if decision == "ready":
                 phase["status"] = "arming"
                 self.result["status"] = "phase_arming:" + PHASES[self.index][0]
-                self.status.set("All sampled keys/buttons are up and the input marker is quiet. Running this phase once.")
+                self.status.set("当前状态：检查正在运行\n下一步：等下一条提示。\n需要你操作：现在不需要。\nCheck running; wait for the next prompt.")
                 self.save()
                 self.begin_phase()
                 return
             if held:
-                detail = "Still held: " + ", ".join(held) + ". Release these yourself."
+                detail = "当前状态：仍有键或鼠标按住\n下一步：松开所有按键与鼠标。\n需要你操作：只需松开，不要按测试键。"
             else:
-                detail = "All sampled keys/buttons are up. Keep still: %.1f s remaining." % (
+                detail = "当前状态：已全部松开\n下一步：再保持静止 %.1f 秒。\n需要你操作：不需要。" % (
                     PREARM_QUIET_SECONDS - record["quiet_seconds"])
-            self.status.set(detail + "\nNo input is armed. Wait limit: %.1f s." % record["remaining_seconds"])
+            self.status.set(detail + "\n等待剩余：%.1f 秒。" % record["remaining_seconds"])
             self.root.after(PREARM_POLL_MS, lambda: self.poll_input_ready(phase))
         except BaseException as error:
             self.fail(error)
@@ -580,9 +713,8 @@ class Suite:
             else:
                 broker.hold_once()
                 self.active["hold_submitted_at"] = time.monotonic()
-                self.status.set("Wait until INPUT TARGET says DOWN, then " +
-                                ("press and release Ctrl+Alt+F9." if name == "emergency" else
-                                 "press and HOLD RIGHT SHIFT until asked to release it."))
+                self.status.set("当前状态：等待蓝色区域就绪\n下一步：等“现在按键”的提示。\n"
+                                "需要你操作：暂时不需要，不要碰鼠标。\nWait for the NOW prompt; do not touch the mouse.")
                 self.root.after(10, self.poll_hold)
         except BaseException as error:
             self.fail(error)
@@ -593,9 +725,9 @@ class Suite:
     def focus_transition(self):
         self.secondary = self.tk.Toplevel(self.root)
         self.secondary.withdraw()
-        self.secondary.title("MaaWXQ Owned Focus Target " + str(os.getpid()))
+        self.secondary.title("MaaWXQ Owned Focus Target / 自建焦点窗口 " + str(os.getpid()))
         self.secondary.geometry("360x160+940+100")
-        self.tk.Label(self.secondary, text="Second owned window. Old target must reject input.", wraplength=320).pack(pady=30)
+        self.tk.Label(self.secondary, text="本程序的第二个窗口：原目标必须拒绝输入。\nSecond owned window: the old target must reject input.", wraplength=320).pack(pady=30)
         self.secondary.deiconify()
         self.secondary.update_idletasks()
         user = c.WinDLL("user32", use_last_error=True)
@@ -682,7 +814,7 @@ class Suite:
                         if now - row["shift_preserved_since"] >= 0.10:
                             row["right_shift_preserved_100ms"] = True
                             if "release_shift_prompt_at" not in row:
-                                self.status.set("Owned left button is released; Right Shift stayed down. Now release RIGHT SHIFT. Do not touch the mouse.")
+                                self.status.set("当前状态：可以松开了\n下一步：现在松开右 Shift。\n需要你操作：松开右 Shift；不要碰鼠标。\nRELEASE RIGHT SHIFT NOW; do not touch the mouse.")
                                 self.root.update_idletasks()
                                 row["release_shift_prompt_at"] = time.monotonic()
                     elif "release_shift_prompt_at" not in row:
@@ -795,9 +927,12 @@ class Suite:
         print(json.dumps(self.result, ensure_ascii=False, indent=2), flush=True)
         print(("Report: " if saved else "Report could not be saved: ") + str(self.output), flush=True)
         try:
-            self.instructions.set(("Report saved." if saved else "Report write failed; copy the console JSON.")
-                                  + " Game input remains disabled. No phase will retry.")
-            self.status.set(self.result["status"] + "\n" + str(self.output))
+            self.instructions.set(("报告已保存 / Report saved." if saved else "报告写入失败，请保留控制台 JSON / Report write failed; keep console JSON.")
+                                  + "\n本次测试已结束，不会重试，也不会操作游戏。\nThis run has ended. No retry or game input.")
+            self.status.set("当前状态：本次已结束\n下一步：等待结果分析；如果还按住键，请松开。\n需要你操作：不用再按测试键或重复点击。\nTest ended; no further test key presses.")
+            if hasattr(self, "heading"):
+                self.heading.set("全部检查通过 / All checks passed" if self.result["all_phases_passed"] else
+                                 "本次未全部通过，已停止 / Check stopped")
             self.run_button.configure(state="disabled")
             self.check.configure(state="disabled")
             self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
@@ -815,7 +950,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     output = output_dir / ("owned-window-diagnostic-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ") + ".json")
     result = {"schema": "maawxq-owned-window-diagnostic/2", "readiness_revision": "bounded-release-and-quiet/1",
-        "ownership_diagnostics_revision": "full-width-mouse-tags/1",
+        "ownership_diagnostics_revision": "full-width-mouse-tags/1", "ui_revision": "chinese-current-step/2",
         "pid": os.getpid(), "status": "input_disabled",
         "window_created": False, "all_phases_passed": False, "target_scope": "current_process_owned_fixed_widgets",
         "game_input_count": 0, "game_gate_passed": False, "keyboard_injection_count": 0,

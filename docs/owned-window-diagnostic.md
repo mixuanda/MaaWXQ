@@ -22,18 +22,25 @@ security settings to make it run. The entry refuses elevated, AppContainer,
 UIAccess or unknown token contexts. No administrator launch is required.
 If preflight or any stage fails, return its report rather than retrying.
 
-## Five separately confirmed stages
+## One approval for automatic checks, separate physical-key confirmation
 
-Keep the owned diagnostic window visible. For each stage, read the instructions,
-tick its initially unchecked confirmation, and press **Confirm and run this phase
-once**. Release every mouse button and key, then keep still. A visible countdown
-waits for all sampled inputs to be up and the session input marker to stay
-unchanged for one full second. It lists any still-held input categories so you can
-release them yourself. This unarmed wait lasts at most 15 seconds after confirmation.
+The Chinese window shows the current status and one next action in large text.
+Keep it visible. Check the initially unchecked consent box and press the primary
+start button once to authorize only Deadline, Click and Focus. These first three
+checks continue automatically after a passing stage. Each of the two physical-key
+stages then pauses for its own unchecked readiness confirmation. Confirm readiness
+first; press the named test keys only when the large current-action prompt asks.
+Technical report details are collapsed by default; Stop remains available.
+
+Release every mouse button and key, then keep still. Before each stage, a visible
+countdown waits for all sampled inputs to be up and the session input marker to
+stay unchanged for one full second. If input is held, release it yourself. This
+unarmed wait lasts at most 15 seconds after that stage starts its readiness wait.
 Motion or other input restarts the one-second countdown without extending that
 absolute limit. A polling gap over 250 ms also restarts the quiet interval.
-Later stages never arm automatically. **Stop and save report** or closing the
-window stops the suite; no queued phase may run after stopping.
+The automatic-group authorization never covers either physical-key stage.
+Stopping or closing the window prevents every queued continuation; a failed stage
+is never retried automatically.
 
 This wait is read-only: it does not open input guards, take an input lease, send
 input or force key/button releases. It stops on lost foreground, unavailable
@@ -80,6 +87,12 @@ events, limited hook/hotkey evidence, timing, preserved Shift state and all brok
 cleanup results. It logs only the named test keys or the category `other`; no
 typed text, arbitrary key codes, pointer paths, screenshots or account data are
 collected. Native event insertion counts alone never pass a delivery stage.
+
+`ui_revision=chinese-current-step/2` records the Chinese current-step interface.
+`automatic_group_consent` records the single approval for the first three checks;
+each phase records its confirmation mode, original confirmation time and phase
+start time. Group-approved phases are not reported as individually confirmed.
+The two physical stages still record their own individual confirmation.
 
 `readiness_revision=bounded-release-and-quiet/1` adds a per-phase `input_readiness`
 summary: the wait/quiet durations, sample/reset counts, observed category union
@@ -141,7 +154,14 @@ They run with real Windows DLL loading forbidden. Additional tag-evidence tests
 check native layout, full-width send-buffer bytes and the actual Python hook
 branch against full matches, low-32 matches, sign extension and non-injected
 events. The production input/stop decisions remain unchanged; the only native
-port addition is passive post-decision mouse-tag observation.
+port addition is passive post-decision mouse-tag observation. The Chinese UI and
+consent integration passes 31 focused offline checks with native API loading and
+Tk window creation blocked, including the
+[consent-flow tests](../test_owned_window_diagnostic_ui.py). Compile checks pass;
+the readiness gate, broker, complete-token ownership comparison, acceptance and
+cleanup logic remain unchanged. A separate worker inspected the owned-window
+layout at 96 DPI; this is rendering evidence, not a passed physical-input test or
+validation at every DPI. Integration does not launch the diagnostic or send input.
 
 Split DOWN submission can race the inherited last-input marker, which can also
 observe our own injected event. Such revocation fails the test; the guard is not
