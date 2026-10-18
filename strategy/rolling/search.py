@@ -7,6 +7,7 @@ import time
 from ..contracts import MatchState, digest, number
 from ..policy import Policy
 from .actions import Advice, generate, revalidate
+from .economy import EconomyObjective
 from .memory import Belief, MemoryPolicy, assess
 from .model import DOMAIN, Formation, Position, World, formation, move_reasons, moves, read_position, transition
 
@@ -58,6 +59,8 @@ class Alternative:
     rounds: tuple[RoundTrace, ...]
     terminal_position: Position
     resource_ledger: tuple["StepTrace", ...]
+    terminal_resource_value: float = 0
+    resource_value_delta_from_root: float = 0
     analysis_only: bool = field(default=True, init=False)
 
 
@@ -101,6 +104,7 @@ class Result:
     budget: Budget
     evaluator_version: str
     final_gate: str
+    economy: EconomyObjective = EconomyObjective()
     schema_version: str = "advisory-rolling-plan/1"
     domain: str = field(default=DOMAIN, init=False)
     execution_allowed: bool = field(default=False, init=False)
@@ -122,13 +126,15 @@ class Node:
 
 def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
          memory_policy=MemoryPolicy(), evaluator=ExactEvaluator(), cancelled=lambda: False,
-         latest_snapshot=None, clock=time.monotonic):
+         latest_snapshot=None, clock=time.monotonic, economy=EconomyObjective()):
     """Rebuild from observations each call; no old continuation is ever replayed.
 
     A completed incumbent can survive node/time exhaustion, with the limitation
     explicit. Without one, return a revalidated hold. Cancellation returns none.
     Checks are cooperative and cannot preempt arbitrary caller-supplied code.
     """
+    if not isinstance(economy, EconomyObjective):
+        raise ValueError("an explicit validated economy objective is required")
     started = clock()
     root = None
     belief = None
@@ -198,7 +204,7 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
                       now, status, selected, tuple(sorted(choices.values(), key=alternative_key)),
                       belief, tuple(dict.fromkeys(reasons)), root.rejections if root else (),
                       termination, nodes, duplicates, completed, exhaustive, budget,
-                      evaluator_version, gate)
+                      evaluator_version, gate, economy)
 
     def fallback(reason):
         nonlocal termination
@@ -230,6 +236,7 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
             or not callable(getattr(evaluator, "score", None))):
         return fallback("evaluator_unavailable")
     pos, _ = read_position(state, world)
+    root_resource_value = economy.terminal_value(pos.credits)
     first_round = pos.round
     final_round = first_round + budget.horizon - 1
     root_actions = {x.move.label: x for x in root.actions}
@@ -303,8 +310,12 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
                 return False
             if outcome.terminal:
                 completed += 1
-                choice = Alternative(first, path, total, child.switching_cost, traces, outcome.position,
-                                     child.resource_ledger)
+                reserve_value = economy.terminal_value(outcome.position.credits)
+                combined = total + reserve_value
+                if not number(combined):
+                    raise ValueError("combined_utility_overflow")
+                choice = Alternative(first, path, combined, child.switching_cost, traces, outcome.position,
+                                     child.resource_ledger, reserve_value, reserve_value - root_resource_value)
                 previous = choices.get(first)
                 if previous is None or alternative_key(choice) < alternative_key(previous):
                     choices[first] = choice
@@ -331,6 +342,8 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
     best = min(choices.values(), key=alternative_key)
     limited = not exhaustive
     reasons = ("best_completed_declared_worst_case_path", "continuations_require_new_observation_and_replanning")
+    if economy.enabled:
+        reasons += ("explicit_terminal_credit_option_value", "economy_weights_are_not_calibrated_game_rules")
     if limited:
         reasons += (termination, "unexplored_paths_may_be_better")
     return finish(root_actions[best.first_move], "budget_limited" if limited else "recommend",
