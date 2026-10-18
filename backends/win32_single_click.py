@@ -92,6 +92,9 @@ class WindowsClickPort:
         self.open_attempted = False
         self.process_lease_owned = False
         self.mutex_owned = False
+        self.owned_release_attempt_count = 0
+        self.owned_release_last_raw_return = None
+        self.owned_release_completed_at = None
         self._configure()
 
     def _configure(self):
@@ -163,6 +166,9 @@ class WindowsClickPort:
             function = getattr(self.kernel, name)
             function.argtypes, function.restype = arguments, result
 
+    def _diagnostic_signal(self, kind, message, flags=0, detail=0):
+        """Optional owned-test observation; default does not record any input."""
+
     def foreground(self):
         return int(self.user.GetForegroundWindow() or 0)
 
@@ -205,6 +211,8 @@ class WindowsClickPort:
                 try:
                     if code >= 0:
                         item = c.cast(address, c.POINTER(self.MouseHook)).contents
+                        self._diagnostic_signal("mouse", int(message), int(item.flags),
+                                                int(item.extra == self.token))
                         if not (item.flags & 1 and item.extra == self.token):
                             stop("user_or_foreign_mouse_input")
                 except Exception:
@@ -216,6 +224,7 @@ class WindowsClickPort:
                 try:
                     if code >= 0:
                         item = c.cast(address, c.POINTER(self.KeyboardHook)).contents
+                        self._diagnostic_signal("keyboard", int(message), int(item.flags), int(item.vk))
                         if not (item.flags & 0x10 and item.extra == self.token):
                             stop("user_or_foreign_keyboard_input")
                 except Exception:
@@ -241,6 +250,7 @@ class WindowsClickPort:
                         stop("guard_message_loop_failed" if outcome < 0 else "guard_message_loop_ended")
                         break
                     if message.message == 0x0312:
+                        self._diagnostic_signal("hotkey", int(message.wParam), 0, int(message.lParam))
                         stop("emergency_hotkey")
             except Exception as error:
                 self.error = str(error)
@@ -329,14 +339,19 @@ class WindowsClickPort:
                 return True
             event = self.Input()
             event.type, event.mi.dwFlags, event.mi.dwExtraInfo = 0, 0x0004, self.token
+            self.owned_release_attempt_count += 1
             try:
-                released = self.user.SendInput(1, c.byref(event), c.sizeof(self.Input)) == 1
+                self.owned_release_last_raw_return = int(
+                    self.user.SendInput(1, c.byref(event), c.sizeof(self.Input)))
+                released = self.owned_release_last_raw_return == 1
             except Exception:
+                self.owned_release_last_raw_return = None
                 released = False
             if not released:
                 self._cleanup_error("owned_button_release_failed")
                 return False
             self.held = False
+            self.owned_release_completed_at = time.monotonic()
             return True
 
     def close(self):

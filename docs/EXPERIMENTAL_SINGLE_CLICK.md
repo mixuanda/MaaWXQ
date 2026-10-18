@@ -6,7 +6,9 @@ foreground mouse diagnostic for a window owned by the calling process.
 Construction, import and the default `enabled=False` broker open no native port.
 The existing [`config.json`](../config.json) keeps `input_enabled=false` and
 `capture_enabled=false`. No main command, ChildSession adapter or strategy policy
-imports or enables this diagnostic.
+imports or enables this diagnostic. For the single user-operated self-window
+entry, use the [owned-window diagnostic instructions](owned-window-diagnostic.md).
+Its native stages remain unverified and never enable game input.
 
 `custom_room` is rejected even when a caller asserts that no other humans are
 present and the operation is reversible. The native port additionally checks the
