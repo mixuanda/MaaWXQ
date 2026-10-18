@@ -3,7 +3,8 @@
 See [V8 automatic purchase evidence](hand-appearance-evidence.md) for the later
 spatially verified Sun Bin purchase and its specialized hand-binding API.
 [The earlier recognition repair](PURCHASE_RECOGNITION_REPAIR.md) preserves the
-Yao transaction's original visual-only result. Deployment remains unverified.
+Yao transaction's original visual-only result. [V9](DEPLOYMENT_V9.md) adds an
+observed deployment; its live automatic postcondition remains unverified.
 
 V5/V6 continuation. No game input was run during this implementation. This
 small handler does not depend on global combat statistics, a complete unit

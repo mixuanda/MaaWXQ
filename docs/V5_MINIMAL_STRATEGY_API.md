@@ -7,7 +7,9 @@ milestone. It has not executed a strategy-generated game action.
 
 That statement describes the original V5 bridge milestone. The later
 [V8 specialized purchase producer](hand-appearance-evidence.md) automatically
-verified one Sun Bin purchase; deployment and a complete match remain unverified.
+verified one Sun Bin purchase. [V9](DEPLOYMENT_V9.md) later executed a drag whose
+placement was confirmed from original images; automatic deployment verification
+and a complete match remain unfinished.
 
 ## What the real replay established
 

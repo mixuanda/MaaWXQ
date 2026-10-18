@@ -1,5 +1,9 @@
 # V8: automatic purchase verified; deployment pending
 
+Later [V9 deployment evidence](DEPLOYMENT_V9.md) records a Li Yuanfang drag whose
+placement was confirmed by original-image review. Its live deployment
+postcondition is still unverified. The V8 events below retain their outcomes.
+
 The control worker's recorded Sun Bin purchase automatically returned
 `purchase_verified`: energy changed from 6 to 3 and the spatial detector found
 the purchased hero added to the hand while preserving both original cards.

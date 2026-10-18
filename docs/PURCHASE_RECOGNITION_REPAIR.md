@@ -2,7 +2,9 @@
 
 This records the earlier Yao/OCR milestone. A later Sun Bin purchase automatically
 passed the spatial hand and currency verifier; see [V8 evidence and API](hand-appearance-evidence.md).
-The original Yao receipt remains visual-only, and deployment is still pending.
+The original Yao receipt remains visual-only. [V9 placement](DEPLOYMENT_V9.md)
+was subsequently confirmed from original images; its live automatic
+deployment postcondition and continuous strategy remain unfinished.
 
 The control worker submitted one actual purchase of Yao in a five-bot Xingyao
 custom game. It visually inspected original before/after client images and

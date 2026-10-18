@@ -157,3 +157,14 @@ freshness gate. This specialized two-to-three-card layout is not a generic
 inventory reader. A subsequent hand-card click opened details; deployment
 remains unverified. Private controllers, images, profiles and retention/deletion
 code are excluded. Integration itself sent no game input.
+
+## V9 first-unit drag
+
+[V9](../docs/DEPLOYMENT_V9.md) adds a distinct typed, default-off 300 ms drag
+for an automatically purchased hero in the reviewed three-card hand and empty
+0/3 board. The observed Li Yuanfang placement was confirmed from original
+images (hand 3 to 2, board 0/3 to 1/3), while the runtime deployment postcondition
+remains false. The portable round-label parser correction is source-only;
+continuous strategy, draft/talent states and automatic board verification are
+not complete. Native guards, purchase handling and evidence retention are
+unchanged; private controllers and patches are not published.
