@@ -1,0 +1,18 @@
+{
+  "schema_version": "synthetic-simulator-golden/1",
+  "synthetic_fixture": true,
+  "rules_version": "synthetic-simulator-rules/1",
+  "scenario": "synthetic-economy-v1",
+  "seed": 7,
+  "description": "Original anonymous accounting trace; no real game or placement evidence.",
+  "actions": [
+    "buy:unit-d", "deploy:unit-d", "end_round", "buy:unit-c",
+    "replace:unit-d->unit-c", "end_round", "end_round"
+  ],
+  "expected_credits_after": [1, 1, 2, 1, 0, 1, 1],
+  "expected_spent": [2, 0, 0, 1, 1, 0, 0],
+  "expected_income": [0, 0, 1, 0, 0, 1, 0],
+  "expected_round_after": [1, 1, 2, 2, 2, 3, 3],
+  "expected_final_board": ["unit-a", "unit-c"],
+  "expected_discarded": ["unit-d"]
+}
