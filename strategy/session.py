@@ -189,8 +189,8 @@ def decide_observations(request, observation_records, *, allow_test_rules=False)
     return build_report(request, events, allow_test_rules=allow_test_rules)
 
 
-def build_report(request, events, *, allow_test_rules=False):
-    """Rebuild each cutoff from observations; outcomes and future events stay out."""
+def configure_request(request, *, allow_test_rules=False):
+    """Decode frozen engine settings without starting a decision."""
     _object(request, ("schema_version", "engine", "label", "rule_data", "policy",
                       "memory_policy", "decision_points"), "session request")
     if request.get("schema_version") != SCHEMA:
@@ -210,6 +210,62 @@ def build_report(request, events, *, allow_test_rules=False):
         raise ValueError("rule_data must be an explicit registry or world object")
     rules = (world_from_dict(request["rule_data"]) if engine == "synthetic_rolling"
              else registry_from_dict(request["rule_data"]))
+    return engine, rules, policy, memory_policy
+
+
+def evaluate_state(state, configured, point, *, at, available, total_events):
+    """Shared typed-state engine for the replay API and incremental advisor."""
+    engine, rules, policy, memory_policy = configured
+    _object(point, ("point_id", "decision_at", "opponent_id", "budget", "economy"), "decision point")
+    point_id = point["point_id"]
+    identifier(point_id)
+    if engine == "synthetic_rolling":
+        identifier(point.get("opponent_id"))
+        budget = Budget(**_object(point.get("budget", {}), Budget.__dataclass_fields__, "budget"))
+        economy = EconomyObjective(**_object(point.get("economy", {}),
+                                   ("reserve_target", "value_per_credit"), "economy"))
+        result = plan(state, rules, point["opponent_id"], now=at, budget=budget,
+                      policy=policy, memory_policy=memory_policy, economy=economy)
+        ranking = _rolling_ranking(result, state, rules)
+        rejected = [{"candidate": name, "reasons": list(reasons)}
+                    for name, reasons in result.root_rejections]
+        selected = result.selected.move.label if result.selected else None
+        status = result.status
+        score_kind = result.score_kind
+    else:
+        if set(point) & {"opponent_id", "budget", "economy"}:
+            raise ValueError("rolling-only point settings cannot affect reviewed_rules")
+        result = decide(state, rules, now=at, policy=policy)
+        ranking = _reviewed_ranking(result)
+        rejected = [{"candidate": item.candidate.operation,
+                     "candidate_id": item.candidate.candidate_id,
+                     "reasons": list(item.reasons)} for item in result.evaluations if not item.accepted]
+        selected = result.selected.operation if result.selected else None
+        status = "recommend" if selected else "abstain"
+        score_kind = result.score_kind
+    row = {
+        "point_id": point_id, "decision_at": at.isoformat(), "status": status,
+        "execution_allowed": False, "rule_domain": rules.domain,
+        "selected": selected, "score_kind": score_kind,
+        "action_proposal": _action_proposal(result, engine),
+        "blocking_gaps": ([{"code": reason.partition(":")[0],
+                            "detail": reason.partition(":")[2] or None}
+                           for reason in result.reasons]
+                          if result.selected is None or status == "fallback" else []),
+        "snapshot": _snapshot(state),
+        "input_window": {"available_event_ids": [event.event_id for event in available],
+                         "events_after_cutoff": total_events - len(available),
+                         "source_counts": dict(sorted(Counter(event.source.kind for event in available).items()))},
+        "ranking_scope": "completed_paths_only" if engine == "synthetic_rolling" else "accepted_candidates",
+        "ranking": ranking, "rejected": rejected,
+        "reasons": list(result.reasons), "core_result": to_dict(result),
+    }
+    return row, result
+
+
+def build_report(request, events, *, allow_test_rules=False):
+    """Rebuild each cutoff from observations; outcomes and future events stay out."""
+    engine, rules, policy, memory_policy = configure_request(request, allow_test_rules=allow_test_rules)
     points = request.get("decision_points")
     if not isinstance(points, list) or not 1 <= len(points) <= MAX_POINTS:
         raise ValueError("one through sixteen decision points required")
@@ -228,47 +284,9 @@ def build_report(request, events, *, allow_test_rules=False):
         available = tuple(event for event in events if event.ingested_at <= at and event.observed_at <= at)
         for event in sorted(available, key=lambda event: event.ingested_at):
             state = reduce_observation(state, event, now=at)
-        if engine == "synthetic_rolling":
-            identifier(point.get("opponent_id"))
-            budget = Budget(**_object(point.get("budget", {}), Budget.__dataclass_fields__, "budget"))
-            economy = EconomyObjective(**_object(point.get("economy", {}),
-                                       ("reserve_target", "value_per_credit"), "economy"))
-            result = plan(state, rules, point["opponent_id"], now=at, budget=budget,
-                          policy=policy, memory_policy=memory_policy, economy=economy)
-            ranking = _rolling_ranking(result, state, rules)
-            rejected = [{"candidate": name, "reasons": list(reasons)}
-                        for name, reasons in result.root_rejections]
-            selected = result.selected.move.label if result.selected else None
-            status = result.status
-            score_kind = result.score_kind
-        else:
-            if set(point) & {"opponent_id", "budget", "economy"}:
-                raise ValueError("rolling-only point settings cannot affect reviewed_rules")
-            result = decide(state, rules, now=at, policy=policy)
-            ranking = _reviewed_ranking(result)
-            rejected = [{"candidate": item.candidate.operation,
-                         "candidate_id": item.candidate.candidate_id,
-                         "reasons": list(item.reasons)} for item in result.evaluations if not item.accepted]
-            selected = result.selected.operation if result.selected else None
-            status = "recommend" if selected else "abstain"
-            score_kind = result.score_kind
-        rows.append({
-            "point_id": point_id, "decision_at": at.isoformat(), "status": status,
-            "execution_allowed": False, "rule_domain": rules.domain,
-            "selected": selected, "score_kind": score_kind,
-            "action_proposal": _action_proposal(result, engine),
-            "blocking_gaps": ([{"code": reason.partition(":")[0],
-                                "detail": reason.partition(":")[2] or None}
-                               for reason in result.reasons]
-                              if result.selected is None or status == "fallback" else []),
-            "snapshot": _snapshot(state),
-            "input_window": {"available_event_ids": [event.event_id for event in available],
-                             "events_after_cutoff": len(events) - len(available),
-                             "source_counts": dict(sorted(Counter(event.source.kind for event in available).items()))},
-            "ranking_scope": "completed_paths_only" if engine == "synthetic_rolling" else "accepted_candidates",
-            "ranking": ranking, "rejected": rejected,
-            "reasons": list(result.reasons), "core_result": to_dict(result),
-        })
+        row, _ = evaluate_state(state, (engine, rules, policy, memory_policy), point,
+                                at=at, available=available, total_events=len(events))
+        rows.append(row)
     return {"schema_version": "strategy-session-report/1", "request_schema": SCHEMA,
             "engine": engine, "label": request.get("label", ""), "rule_domain": rules.domain,
             "execution_allowed": False, "placement_probabilities": None,

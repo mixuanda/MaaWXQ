@@ -85,6 +85,10 @@
               },
               "postcondition_contract": {
                 "const": "required_from_reviewed_game_adapter_not_inferred_from_score"
+              },
+              "proposal_id": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "required": [

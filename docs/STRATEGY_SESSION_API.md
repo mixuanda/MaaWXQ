@@ -29,6 +29,54 @@ do not validate that pipeline.
   rules and one through sixteen named decision points.
 - [Response schema](../schemas/strategy-response.schema.json): point results,
   ranked candidates, concrete gap codes and the serialized action proposal.
+- [Persistent command schema](../schemas/strategy-advisor.schema.json): observe,
+  decide and validate requests; the `#/$defs/response` fragment describes replies.
+
+## Incremental controller integration
+
+The software control loop can keep one `Advisor` instance rather than rebuilding
+or launching a process for every frame:
+
+```python
+from strategy.advisor import Advisor
+
+advisor = Advisor(request)  # Frozen explicit engine/rules/policy configuration.
+advisor.observe(recognizer_record, now=received_at)
+point = advisor.decide(decision_at=cutoff)
+if point["action_proposal"] is not None:
+    check = advisor.validate(point["proposal_id"], now=before_dispatch_at)
+    # The controller consumes the bound intent only when candidate_valid is true,
+    # then applies its game-UI/input guards and verifies the observed result.
+```
+
+`observe()` preserves typed match-scoped state, partial fields and unknowns.
+Exact duplicate delivery is idempotent. `decide()` supplies the same ranking and
+explanations as the session API and issues a process-instance proposal handle.
+`validate()` uses the retained immutable candidate and the existing core hard
+gate, current state/ban/memory and expiry; modifying a returned JSON dictionary
+cannot modify that retained candidate. Recomputing replaces the previous handle
+even if the chosen candidate is unchanged. Handles are correlation for one
+advisor instance, not credentials or input authorization.
+
+The caller serializes access to the instance and observes pending fresh evidence
+before final validation. A live cutoff before current evidence is rejected; use
+the session replay API for historical cutoffs. Validation establishes continued
+advisory support, not UI target identity, physical execution or postcondition
+success. Unsupported real rules still yield a concrete gap list and no proposal.
+
+The persistent process transport uses one JSON command and one JSON response per
+line, with stdout flushed after every response:
+
+```powershell
+Get-Content -Raw examples/strategy_synthetic/session/commands.synthetic.jsonl | python -B -m strategy.advisor --request examples/strategy_synthetic/session/request.synthetic.json --allow-test-rules
+```
+
+The command operations are `observe` (`observation`, `now`), `decide`
+(`decision_at`, optional point/opponent/budget/economy), and `validate`
+(`proposal_id`, `now`). Replies wrap the machine result in `{"ok":true,"result":...}`;
+invalid commands return `ok=false` and an error. EOF ends the service. The service
+uses no network, desktop or input transport. Runtime/recognition code can use this
+transport or import the Python object; neither path requires assistant clicks.
 
 The standard-library runtime decoders additionally enforce provenance, versions,
 numeric finiteness, chronology, evidence freshness, budgets and model support.
@@ -126,10 +174,12 @@ breaker sighting changes the best supported result to `end_round` at 7. With a
 fresh guard and C prohibited, it selects `replace:B->E` at 8. These are artificial
 utilities and no real-game strength, cost or ban semantics are asserted.
 
-The focused session checks exercise the Python and stdin CLI paths, all four
+The focused session and incremental-advisor checks exercise Python and stdin CLI
+paths, issued-candidate validation, returned-payload immutability, superseded
+handles, duplicate delivery, expiry, match reset and all four
 contrasts, full score accounting, links, evidence cutoff/late ingestion, match
 reset and software-recognition provenance. The core, domain-boundary, rolling,
-memory-origin and prohibited-formation checks also pass: 36 targeted checks, with
+memory-origin and prohibited-formation checks also pass: 42 targeted checks, with
 native DLL loading blocked. No training, fitting, capture or input is performed.
 No dependencies or project-license choice are added; see
 [existing notices](../THIRD_PARTY_NOTICES.md).
