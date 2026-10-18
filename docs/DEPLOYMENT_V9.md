@@ -1,10 +1,16 @@
 # V9: automatic purchase, observed deployment, no continuous strategy yet
 
+Later [V11](DEPLOYMENT_V11.md) independently achieved live automatic purchase
+and deployment verification. It also corrects the old capacity transcription:
+the actual population is 0/5 to 1/5, not 0/3 to 1/3. Original private V9 records
+retain their incorrect labels and unverified live deployment status as history.
+
 The control worker automatically bought Li Yuanfang for 3 from an energy balance
 of 6; the unchanged PurchaseHandler returned `purchase_verified`. The subsequent
 typed drag moved that owned card from the three-card hand to the reviewed empty
 board location. The original after image showed the unit at the drop point,
-population 0/3 to 1/3, and the hand reduced from three cards to the preserved two.
+population 0/5 to 1/5 (capacity corrected after V9), and the hand reduced from
+three cards to the preserved two.
 Original-image review and a later saved-image hand check confirmed placement.
 
 The distinction is deliberate: the purchase postcondition was automatic in the
@@ -25,14 +31,14 @@ gesture. The internal port protocol still uses its inherited method name.
 The producer must supply a current, positively recognized preparation scene,
 the automatically verified purchased hero still in hand, same custom match and
 game identity, no other humans, recognized empty drop area, and the reviewed
-empty population 0/3. Current source/phase/board/capacity similarities and phase
+empty population 0/5. Current source/phase/board/capacity similarities and phase
 class margin are explicit evidence. Every value must come from the same original
 capture or its correctly bound custom-match/purchase context. A caller-provided
 boolean or typed record alone is not independent perception or authorization.
 
 The adapter deliberately supports only the reviewed 1450 x 869 first-unit
-layout, hand source region and destination (710,555). `capacity=3, occupied=0`
-is an observed restriction of this prototype, not a general game rule or a
+layout, hand source region and destination (710,555). `capacity=5, occupied=0`
+is the corrected observed restriction of this prototype, not a general game rule or a
 capacity inferred from unrelated UI. Other capacities, locations, hand layouts
 and phases must be implemented from new evidence rather than guessed.
 
@@ -46,7 +52,7 @@ frame SHA256 and original monotonic capture time:
 | `x`, `y`, `end_x`, `end_y` | Positively recognized hand source and reviewed drop target |
 | `source_match`, `empty_board_match`, `capacity_match` | Uncalibrated current hand/board/population similarities |
 | `phase_match`, `phase_margin` | Current preparation-class similarity >= .97, margin >= .02 |
-| `capacity`, `occupied`, `no_other_humans_verified` | Reviewed empty 0/3 custom-bot context |
+| `capacity`, `occupied`, `no_other_humans_verified` | Reviewed empty 0/5 custom-bot context |
 
 The drag submits one tagged MOVE+DOWN batch, ten bounded move events and one
 owned UP over approximately 300 ms. Legacy `down_count=2` counts that initial
@@ -87,10 +93,13 @@ phase or authorize ready actions by itself.
 
 The actual baseline stopped with zero ready actions after strict OCR parsing
 failed. The frozen parser includes the subsequent source correction; that
-correction and the adjusted selection-observer scheduling were not live-retested.
+correction and the adjusted selection-observer scheduling were not live-retested
+at the V9 checkpoint. Later V11 recognized rounds 3, 4 and 5, while ready
+postconditions still remained unverified.
 The path-bound private round loop and scheduling changes are not copied into
 this publication. Draft/talent handling, generalized placement, a live board
-postcondition and the intended continuous round cycle remain unfinished.
+postcondition and the intended continuous round cycle remained unfinished at
+V9; V11's separate bounded round observations do not establish a full strategy.
 
 Integration checked all 31 frozen source hashes and unchanged native/handler
 dependencies, original frame hashes and movement/release records. Tests use

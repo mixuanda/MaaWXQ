@@ -28,7 +28,7 @@ class DeploymentDragTests(unittest.TestCase):
             recognizer='owned-hero-and-empty-board/1',frame_sha256='a'*64,executable_path=row['executable_path'],
             no_other_humans_verified=True,end_x=710,end_y=555,hero_id='fixture-hero',match_id='fixture-custom',
             capture_utc='2026-01-01T00:00:00Z',source_match=.96,empty_board_match=.99,capacity_match=.99,
-            capacity=3,occupied=0,phase_match=.99,phase_margin=.04,purchase_verified=True)
+            capacity=5,occupied=0,phase_match=.99,phase_margin=.04,purchase_verified=True)
         return evidence,row
 
     def test_drag_has_one_down_ten_tagged_moves_and_only_one_owned_up(self):
@@ -118,6 +118,7 @@ class DeploymentDragTests(unittest.TestCase):
             with self.assertRaisesRegex(NativeUnavailable,'explicit_drag'):broker.click_once()
             broker.arm();result=broker.drag_once()
             self.assertFalse(result['game_postcondition_verified']);self.assertFalse(result['blind_retry_allowed'])
+            self.assertEqual(result['released_at'],at.isoformat())
             with self.assertRaises(NativeUnavailable):broker.drag_once()
         finally:broker.close()
         late=DeploymentDragBroker(evidence,observer=Mock(return_value=row),clock=lambda:10,
@@ -127,7 +128,7 @@ class DeploymentDragTests(unittest.TestCase):
 
     def test_changed_context_or_unreviewed_layout_is_rejected(self):
         evidence,row=self.evidence()
-        changes=[{'purchase_verified':False},{'no_other_humans_verified':False},{'occupied':1},{'capacity':4},
+        changes=[{'purchase_verified':False},{'no_other_humans_verified':False},{'occupied':1},{'capacity':4},{'capacity':3},
                  {'source_match':.91},{'empty_board_match':.96},{'phase_margin':.01},{'phase_match':.96},
                  {'end_x':711},{'x':844.0},{'source_match':float('nan')},{'context':'custom_purchase'},
                  {'binding':replace(evidence.binding,width=1920)},{'capture_utc':'invalid'}]

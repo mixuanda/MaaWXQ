@@ -92,6 +92,7 @@ class DeploymentDragBroker(GameClickBroker):
  def drag_once(self):
   receipt=super().click_once()
   return receipt|{'operation':'deploy_owned_hand_hero','gesture':'one_bounded_drag_300ms/1',
+                  'released_at':self.utc_clock().isoformat(),
                   'game_postcondition_verified':False,'blind_retry_allowed':False}
  def validate_context(self):
   e=self.evidence
@@ -102,7 +103,7 @@ class DeploymentDragBroker(GameClickBroker):
       or not isinstance(e.hero_id,str)or not e.hero_id.strip()or e.hero_id=='unknown'
       or not isinstance(e.match_id,str)or not e.match_id.strip()or e.match_id=='unknown'
       or e.no_other_humans_verified is not True or e.purchase_verified is not True
-      or type(e.occupied)is not int or type(e.capacity)is not int or e.occupied!=0 or e.capacity!=3
+      or type(e.occupied)is not int or type(e.capacity)is not int or e.occupied!=0 or e.capacity!=5
       or any(type(v)not in (int,float)or not math.isfinite(v)or not 0<=v<=1 for v in [e.source_match,e.empty_board_match,e.capacity_match,e.phase_match,e.phase_margin])
       or e.source_match<.92 or e.empty_board_match<.97 or e.capacity_match<.97 or e.phase_match<.97 or e.phase_margin<.02
       or any(type(v)is not int for v in(e.x,e.y,e.end_x,e.end_y))

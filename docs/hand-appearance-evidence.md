@@ -1,5 +1,9 @@
 # V8: automatic purchase verified; deployment pending
 
+This heading describes the V8 checkpoint. Later [V11](DEPLOYMENT_V11.md)
+automatically verified a separate Niumo purchase and deployment. Full strategy
+and ready-action postconditions remain incomplete.
+
 Later [V9 deployment evidence](DEPLOYMENT_V9.md) records a Li Yuanfang drag whose
 placement was confirmed by original-image review. Its live deployment
 postcondition is still unverified. The V8 events below retain their outcomes.

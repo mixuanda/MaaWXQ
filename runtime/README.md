@@ -162,9 +162,27 @@ code are excluded. Integration itself sent no game input.
 
 [V9](../docs/DEPLOYMENT_V9.md) adds a distinct typed, default-off 300 ms drag
 for an automatically purchased hero in the reviewed three-card hand and empty
-0/3 board. The observed Li Yuanfang placement was confirmed from original
-images (hand 3 to 2, board 0/3 to 1/3), while the runtime deployment postcondition
-remains false. The portable round-label parser correction is source-only;
+0/5 board (the V9 capacity-three transcription is corrected by V11). The observed
+Li Yuanfang placement was confirmed from original images (hand 3 to 2,
+board 0/5 to 1/5), while that historical runtime deployment postcondition
+remains false. The portable round-label parser correction was source-only at V9;
 continuous strategy, draft/talent states and automatic board verification are
 not complete. Native guards, purchase handling and evidence retention are
 unchanged; private controllers and patches are not published.
+
+## V11 automatic deployment verification
+
+[V11 evidence and portable API](../docs/DEPLOYMENT_V11.md) records the later live
+Niumo purchase and `deployment_verified` result: energy 6 to 3, hand 3 to 2,
+population 0/5 to 1/5, owned-unit identity and exact intent/frame bindings.
+`runtime.deployment_postcondition` provides a pure binder/verifier, defaulting
+to saved replay; replay never becomes a new live game result. The byte-identical
+executed bitmap matcher is included without private templates or controllers.
+The drag adapter now requires the corrected capacity five and preserves every
+other native guard, its default-off state and the one-attempt limit.
+
+The finite control run recognized rounds 3, 4 and 5 and submitted ready clicks,
+whose postconditions remain false. Combat and draft-preview observations do not
+establish talent choice, continuous purchasing, dynamic formations, a full match
+policy or win-rate results. Integration used only offline checks and did not
+operate the game. Capture limits and no-deletion policy remain unchanged.
