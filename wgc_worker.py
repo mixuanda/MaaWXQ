@@ -45,7 +45,7 @@ def capture_wgc(hwnd, pid, identity_version, geometry_version):
             return result | {"reason": "wgc_native_dependency_unavailable"}
         signatures = {
             "MaaVersion": ([], c.c_char_p),
-            "MaaSetGlobalOption": ([c.c_int32, c.c_void_p, c.c_uint64], c.c_uint8),
+            "MaaGlobalSetOption": ([c.c_int32, c.c_void_p, c.c_uint64], c.c_uint8),
             "MaaWin32ControllerCreate": ([c.c_void_p, c.c_uint64, c.c_uint64, c.c_uint64], c.c_void_p),
             "MaaControllerDestroy": ([c.c_void_p], None),
             "MaaControllerSetOption": ([c.c_void_p, c.c_int32, c.c_void_p, c.c_uint64], c.c_uint8),
@@ -72,9 +72,9 @@ def capture_wgc(hwnd, pid, identity_version, geometry_version):
         result["backend_version"] = version
         disabled, off = c.c_uint8(0), c.c_int32(0)
         for option in (2, 6, 7):  # SaveDraw, DebugMode, SaveOnError
-            if not api.MaaSetGlobalOption(option, c.byref(disabled), c.sizeof(disabled)):
+            if not api.MaaGlobalSetOption(option, c.byref(disabled), c.sizeof(disabled)):
                 return result | {"reason": "wgc_configuration_failed"}
-        if not api.MaaSetGlobalOption(4, c.byref(off), c.sizeof(off)):
+        if not api.MaaGlobalSetOption(4, c.byref(off), c.sizeof(off)):
             return result | {"reason": "wgc_configuration_failed"}
         # Exactly FramePool=2, never a combined fallback. Mouse/keyboard None=0.
         ctrl = api.MaaWin32ControllerCreate(hwnd, 2, 0, 0)
