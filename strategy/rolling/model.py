@@ -316,6 +316,25 @@ def moves(pos):
                     for old in sorted(pos.board_ids)))
 
 
+@dataclass(frozen=True)
+class FormationBanConflict:
+    unit_id: str
+    matched_bans: tuple[str, ...]
+
+
+def formation_ban_conflicts(world, board_ids, bans):
+    """Observed units do not vanish when banned; they cannot settle for utility."""
+    ids(board_ids)
+    prohibited = set(bans)
+    conflicts = []
+    for unit_id in sorted(board_ids):
+        card = world.card(unit_id)
+        matched = tuple(sorted({card.unit_id, *card.ban_tags} & prohibited))
+        if matched:
+            conflicts.append(FormationBanConflict(unit_id, matched))
+    return tuple(conflicts)
+
+
 def move_reasons(pos, world, move, bans):
     validate_position(pos, world)
     known_tags = {tag for card in world.cards for tag in (card.unit_id, *card.ban_tags)}
@@ -324,6 +343,9 @@ def move_reasons(pos, world, move, bans):
     if move not in moves(pos):
         return ("move_target_or_operation_unknown",)
     reasons = []
+    if move.kind == "end_round":
+        reasons.extend("confirmed_ban_on_board:" + item.unit_id
+                       for item in formation_ban_conflicts(world, pos.board_ids, bans))
     if move.unit_id:
         card = world.card(move.unit_id)
         if {card.unit_id, *card.ban_tags} & set(bans):

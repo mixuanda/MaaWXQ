@@ -9,8 +9,8 @@ from ..policy import Policy
 from .actions import Advice, generate, revalidate
 from .economy import EconomyObjective
 from .memory import Belief, MemoryPolicy, assess
-from .model import (DOMAIN, Formation, Position, SupportScope, World, formation,
-                    move_reasons, moves, read_position, transition)
+from .model import (DOMAIN, Formation, FormationBanConflict, Position, SupportScope, World,
+                    formation, formation_ban_conflicts, move_reasons, moves, read_position, transition)
 
 
 @dataclass(frozen=True)
@@ -107,6 +107,7 @@ class Result:
     final_gate: str
     economy: EconomyObjective = EconomyObjective()
     support_scope: SupportScope | None = None
+    root_formation_conflicts: tuple[FormationBanConflict, ...] = ()
     schema_version: str = "advisory-rolling-plan/1"
     domain: str = field(default=DOMAIN, init=False)
     execution_allowed: bool = field(default=False, init=False)
@@ -139,6 +140,7 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
         raise ValueError("an explicit validated economy objective is required")
     started = clock()
     root = None
+    root_formation_conflicts = ()
     belief = None
     choices = {}
     nodes = duplicates = completed = 0
@@ -206,7 +208,8 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
                       now, status, selected, tuple(sorted(choices.values(), key=alternative_key)),
                       belief, tuple(dict.fromkeys(reasons)), root.rejections if root else (),
                       termination, nodes, duplicates, completed, exhaustive, budget,
-                      evaluator_version, gate, economy, root.support_scope if root else None)
+                      evaluator_version, gate, economy, root.support_scope if root else None,
+                      root_formation_conflicts)
 
     def fallback(reason):
         nonlocal termination
@@ -214,7 +217,10 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
         hold = next((x for x in root.actions if x.move.kind == "hold"), None) if root else None
         if reason == "cancelled":
             hold = None
-        return finish(hold, "fallback" if hold else "abstain", (reason,))
+        reasons = (reason,)
+        if hold is not None and root_formation_conflicts:
+            reasons += ("banned_board_requires_supported_replacement", "hold_does_not_settle_or_resolve_bans")
+        return finish(hold, "fallback" if hold else "abstain", reasons)
 
     if cancellation_requested():
         termination = "cancelled"
@@ -224,6 +230,8 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
     if not root.actions:
         termination = "unsupported_state_or_rules"
         return finish(None, "abstain", root.reasons)
+    pos, _ = read_position(state, world)
+    root_formation_conflicts = formation_ban_conflicts(world, pos.board_ids, state.confirmed_bans)
     belief, why = assess(state, world, opponent_id, now=now, policy=memory_policy)
     if belief is None:
         termination = "unsupported_memory"
@@ -237,7 +245,6 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
             or getattr(evaluator, "score_kind", None) != "synthetic_utility_not_probability"
             or not callable(getattr(evaluator, "score", None))):
         return fallback("evaluator_unavailable")
-    pos, _ = read_position(state, world)
     root_resource_value = economy.terminal_value(pos.credits)
     first_round = pos.round
     final_round = first_round + budget.horizon - 1
