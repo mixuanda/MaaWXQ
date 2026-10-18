@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from ..contracts import OpponentMemory, aware, digest, identifier, number
+from ..contracts import Observation, OpponentMemory, aware, digest, identifier, number
 from .model import ids
 
 
@@ -25,6 +25,7 @@ class Binding:
     match_id: str
     memory: OpponentMemory
     policy: MemoryPolicy
+    board_event: Observation
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,13 @@ class Belief:
     event_ids: tuple[str, ...]
     sources: tuple[str, ...]
     uncertainty: tuple[str, ...]
+    confidence: float | None = None
+    phase: str | None = None
+    game_build: str | None = None
+    rules_version: str | None = None
+    observed_game_build: str | None = None
+    observed_rules_version: str | None = None
+    coverage_origin: str = "board_observation_event"
     criterion: str = "worst_case_over_declared_scenarios_not_probability"
 
 
@@ -59,6 +67,20 @@ def assess(state, world, opponent_id, *, now, policy=MemoryPolicy()):
         return None, ("opponent_board_not_refreshed_by_latest_sighting",)
     if field.phase is None or field.phase != state.phase:
         return None, ("opponent_phase_unknown_or_mismatched",)
+    origins = tuple(event for event in state.events if event.event_id == field.event_id)
+    if len(origins) != 1:
+        return None, ("opponent_board_origin_missing_or_ambiguous",)
+    origin = origins[0]
+    if (origin.kind != "opponent" or origin.match_id != state.match_id
+            or origin.opponent_id != opponent_id or origin.source != field.source
+            or origin.observed_at != field.last_seen or origin.round != field.round
+            or origin.phase != field.phase or field.field not in origin.fields):
+        return None, ("opponent_board_origin_mismatched",)
+    if origin.ingested_at > now:
+        return None, ("opponent_board_origin_unavailable_at_decision",)
+    if ((origin.game_build is not None and origin.game_build != state.game_build)
+            or (origin.rules_version is not None and origin.rules_version != state.rules_version)):
+        return None, ("opponent_board_version_mismatched",)
     try:
         ids(field.field.value)
     except (ValueError, TypeError):
@@ -69,18 +91,24 @@ def assess(state, world, opponent_id, *, now, policy=MemoryPolicy()):
                 or not 0 <= state.round - round_number <= policy.max_round_age):
             return None, ("opponent_memory_stale_or_future",)
     observed = set(field.field.value)
-    if item.coverage == "full":
+    # Different fields can arrive at the same timestamp. The summary's coverage
+    # can belong to a note-only sighting, not this board's originating event.
+    coverage = origin.coverage
+    if coverage == "full":
         profiles = tuple(x.profile_id for x in world.profiles if set(x.board_ids) == observed)
-    elif item.coverage == "partial":
+    elif coverage == "partial":
         profiles = tuple(x.profile_id for x in world.profiles if observed <= set(x.board_ids))
     else:
         return None, ("opponent_coverage_unknown",)
     if not profiles:
         return None, ("opponent_outside_declared_scenario_support",)
     uncertainty = ("future_rounds_expand_to_all_declared_profiles", "scenario_set_is_synthetic_and_closed")
-    if item.coverage == "partial":
+    if coverage == "partial":
         uncertainty += ("unseen_opponent_units_are_not_absent",)
-    result = Belief(opponent_id, profiles, item.coverage, field.last_seen, field.round,
-                    (now - field.last_seen).total_seconds(), digest(Binding(state.match_id, item, policy)),
-                    (field.event_id,), (field.source.reference,), uncertainty)
+    result = Belief(opponent_id, profiles, coverage, field.last_seen, field.round,
+                    (now - field.last_seen).total_seconds(), digest(Binding(state.match_id, item, policy, origin)),
+                    (field.event_id,), (field.source.reference,), uncertainty,
+                    confidence=field.field.confidence, phase=field.phase,
+                    game_build=state.game_build, rules_version=state.rules_version,
+                    observed_game_build=origin.game_build, observed_rules_version=origin.rules_version)
     return result, ()
