@@ -12,12 +12,13 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import secrets
 import sys
 import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_BROKER_CANONICAL_HASH = "3fb5e60e1771d24e16e2ecd69ed79d204fca4467e35dfa42268dd8737cd33b3f"
+EXPECTED_BROKER_CANONICAL_HASH = "f1e60c0b872765419ab4fff867bd9bd3ef0c2e0affe803a5022b02553f4a2a33"
 sys.path.insert(0, str(ROOT))
 import backends.win32_single_click as native
 from window_identity import find_windows, inspect_window
@@ -123,6 +124,37 @@ class InputReadinessGate:
         return status
 
 
+def describe_mouse_tag(expected, observed, pointer_bits, fingerprint_key):
+    """Read-only comparisons, never an acceptance rule; no raw tag is returned."""
+    mask = (1 << pointer_bits) - 1
+    if not (type(expected) is int and type(observed) is int and 0 <= expected <= mask and 0 <= observed <= mask):
+        return {"comparison_valid": False, "pointer_bits": pointer_bits}
+    low = expected & 0xFFFFFFFF
+    sign_extended = (low | (mask ^ 0xFFFFFFFF)) if pointer_bits > 32 and low & 0x80000000 else low
+    def fingerprint(value):
+        return hashlib.blake2b(value.to_bytes(pointer_bits // 8, "little"),
+                               key=fingerprint_key, digest_size=8).hexdigest()
+    return {"comparison_valid": True, "pointer_bits": pointer_bits,
+            "expected_bits": expected.bit_length(), "observed_bits": observed.bit_length(),
+            "observed_zero": observed == 0, "full_equal": observed == expected,
+            "low32_equal": (observed & 0xFFFFFFFF) == low,
+            "equals_zero_extended_expected_low32": observed == low,
+            "equals_sign_extended_expected_low32": observed == sign_extended,
+            "xor_bit_count": (expected ^ observed).bit_count(),
+            "expected_fingerprint": fingerprint(expected), "observed_fingerprint": fingerprint(observed)}
+
+
+def describe_native_layout(port):
+    """ctypes layout metadata only; no library lookup or native call."""
+    types = {"INPUT": port.Input, "MOUSEINPUT": port.Mouse, "MSLLHOOKSTRUCT": port.MouseHook,
+             "KBDLLHOOKSTRUCT": port.KeyboardHook}
+    return {"pointer_bits": c.sizeof(c.c_void_p) * 8, "ulong_ptr_bytes": c.sizeof(c.c_size_t),
+            "long_bytes": c.sizeof(w.LONG), "dword_bytes": c.sizeof(w.DWORD),
+            "structures": {name: {"bytes": c.sizeof(cls), "alignment": c.alignment(cls),
+                "offsets": {field[0]: getattr(cls, field[0]).offset for field in cls._fields_}}
+                for name, cls in types.items()}}
+
+
 def _read_token_metadata():
     kernel, advapi = c.WinDLL("kernel32", use_last_error=True), c.WinDLL("advapi32", use_last_error=True)
     kernel.GetCurrentProcess.restype = w.HANDLE
@@ -168,7 +200,48 @@ class OwnedDiagnosticPort(native.WindowsClickPort):
         self.hold_raw_return = None
         self.hold_attempted = False
         self.open_input_precheck = {}
+        self.mouse_tag_records = deque(maxlen=16)
+        self.mouse_tag_total = 0
+        self.first_foreign_mouse_tag = None
+        self.mouse_tag_lock = threading.Lock()
+        self.tag_fingerprint_key = secrets.token_bytes(32)  # Private per-port salt, never serialized.
         super().__init__(observer)
+        self.created_token = self.token
+
+    def _diagnostic_mouse_tag(self, message, flags, expected, observed):
+        # Called AFTER the unchanged foreign-input stop. Copy scalars only;
+        # hash/format off the hook thread, and never collect pointer coordinates.
+        record = (message, flags, expected, observed, time.monotonic())
+        with self.mouse_tag_lock:
+            self.mouse_tag_total += 1
+            if self.first_foreign_mouse_tag is None and not (flags & 1 and observed == expected):
+                self.first_foreign_mouse_tag = record
+            self.mouse_tag_records.append(record)
+
+    def ownership_snapshot(self):
+        # Called after guard cleanup by the report path. Evidence cannot authorize input.
+        bits = c.sizeof(c.c_void_p) * 8
+        # Cleanup can be incomplete. Copy a coherent bounded snapshot even when
+        # the hook thread remains alive; never format/hash while holding its lock.
+        with self.mouse_tag_lock:
+            records = tuple(self.mouse_tag_records)
+            first_foreign = self.first_foreign_mouse_tag
+            total = self.mouse_tag_total
+            created_token, current_token = self.created_token, self.token
+        def summarize(record):
+            message, flags, expected, observed, at = record
+            return {"message": message, "flags": flags, "at": at,
+                    "injected": bool(flags & 1), "lower_integrity_injected": bool(flags & 2),
+                    "matches_created_token": expected == created_token,
+                    **describe_mouse_tag(expected, observed, bits, self.tag_fingerprint_key)}
+        return {"revision": "full-width-mouse-tags/1", "layout": describe_native_layout(self),
+                "token_generation": "randbits(pointer_bits - 1) | 1",
+                "token_unchanged_since_creation": current_token == created_token,
+                "created_token_bits": created_token.bit_length(),
+                "mouse_events_seen": total,
+                "trace_dropped": max(0, total - len(records)),
+                "first_foreign_mouse": summarize(first_foreign) if first_foreign else None,
+                "mouse_trace": [summarize(record) for record in records]}
 
     def open(self, stop):
         if not ordinary_token(token_metadata()):
@@ -642,6 +715,7 @@ class Suite:
                 "cleanup_errors": list(broker.cleanup_errors) + list(port.cleanup_errors if port else []),
                 "audit": port.audit_snapshot() if port else [],
                 "open_input_precheck": dict(port.open_input_precheck) if port else {},
+                "ownership_diagnostics": port.ownership_snapshot() if port else {},
                 "release_samples": dict(port.release_samples) if port else {},
                 "release_attempts": getattr(port, "owned_release_attempt_count", 0),
                 "release_raw_return": getattr(port, "owned_release_last_raw_return", None)}
@@ -741,6 +815,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     output = output_dir / ("owned-window-diagnostic-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ") + ".json")
     result = {"schema": "maawxq-owned-window-diagnostic/2", "readiness_revision": "bounded-release-and-quiet/1",
+        "ownership_diagnostics_revision": "full-width-mouse-tags/1",
         "pid": os.getpid(), "status": "input_disabled",
         "window_created": False, "all_phases_passed": False, "target_scope": "current_process_owned_fixed_widgets",
         "game_input_count": 0, "game_gate_passed": False, "keyboard_injection_count": 0,

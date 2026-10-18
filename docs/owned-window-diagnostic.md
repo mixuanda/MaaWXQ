@@ -1,11 +1,13 @@
 # Owned-window diagnostic: one operator entry
 
-**This readiness revision has no new live input evidence.** The previous entry's
-2026-10-18 16:12 UTC report passed deadline rejection in a normal user process,
-then stopped before click submission with `preexisting_held_input`. It did not
-identify the held key. No real click, physical emergency chord or held-button
-release has passed. This command is the stable entry; earlier standalone probes
-are not required by this procedure.
+**This ownership-evidence revision has no new live input evidence.** The previous
+entry's 2026-10-18 16:33 UTC report passed deadline rejection and the readiness
+wait, then delivered one DOWN/UP to the target with a native batch return of 3.
+The click phase failed because the hook marked both events as injected but their
+token did not match; physical emergency and owned-only release did not run.
+This command remains the stable entry; earlier standalone probes are not needed.
+This evidence-only revision requests no additional user run. Retain the existing
+report while the supported native-tool runtime is investigated.
 
 From the repository directory in an ordinary **non-administrator Windows
 PowerShell**, use the existing Python installation:
@@ -90,6 +92,30 @@ labeled later sample must not be treated as the exact original refusal cause.
 The last-input timestamp is used only for inequality comparisons in memory;
 it is not a globally ordered event clock and is not retained in the report.
 
+`ownership_diagnostics_revision=full-width-mouse-tags/1` adds per-port ABI sizes,
+alignment/offsets, token width, and mouse extra-info comparisons. The first
+foreign mouse observation is retained separately; a bounded trace keeps at most
+16 recent mouse observations, including MOVE without its coordinates. Extra-info
+values are compared at their full pointer width. Reports include bit lengths,
+full/low-32 equality, zero/sign-extension comparisons and per-port keyed
+fingerprints, never raw tags, the private fingerprint key, pointer paths or text.
+Formatting/hashing runs outside the hook callback; the callback only copies
+scalar evidence after the existing foreign-input stop decision.
+Snapshot copying briefly locks the bounded records so an incomplete guard cleanup
+cannot produce mixed counters/records; hashing and formatting occur after unlock.
+
+A low-32 match or a zero/sign-extension pattern is diagnostic evidence, never
+permission to accept the event. `injected=true` alone does not establish its
+origin. Token generation, complete-token equality, action budget, native send,
+owned release and acceptance rules are unchanged. The production port only gains
+a no-op observation hook; source pinning is updated for that exact change.
+
+The entry does not call [GetMessageExtraInfo](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessageextrainfo). That API reads the current thread's
+message-queue extra information, while a low-level hook receives its event data
+via [MSLLHOOKSTRUCT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-msllhookstruct). Calling the queue API from a different thread, or after Tk
+has queued a callback, would not establish the original hook event's ownership.
+It is not used as a replacement or fallback ownership signal.
+
 All five accepted stages and complete cleanup are required for
 `all_phases_passed=true`. Early failure saves a partial report and leaves later
 stages `not_run`. A report-write failure also prevents an all-passed result.
@@ -111,8 +137,11 @@ certify native ABI, Tk/Windows message delivery or operation in a normal process
 The [focused offline checks](../test_owned_window_diagnostic.py) include long-held
 confirmation inputs, high-bit semantics, privacy-safe categories, quiet-window
 resets, timeout, focus loss, canceled/stale callbacks, and final input races.
-They run with real Windows DLL loading forbidden. The production broker is byte
-identical to the previously reviewed version; native evidence remains necessary.
+They run with real Windows DLL loading forbidden. Additional tag-evidence tests
+check native layout, full-width send-buffer bytes and the actual Python hook
+branch against full matches, low-32 matches, sign extension and non-injected
+events. The production input/stop decisions remain unchanged; the only native
+port addition is passive post-decision mouse-tag observation.
 
 Split DOWN submission can race the inherited last-input marker, which can also
 observe our own injected event. Such revocation fails the test; the guard is not

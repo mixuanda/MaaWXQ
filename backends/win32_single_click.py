@@ -169,6 +169,9 @@ class WindowsClickPort:
     def _diagnostic_signal(self, kind, message, flags=0, detail=0):
         """Optional owned-test observation; default does not record any input."""
 
+    def _diagnostic_mouse_tag(self, message, flags, expected, observed):
+        """Passive owned-test evidence only; never an input-acceptance predicate."""
+
     def foreground(self):
         return int(self.user.GetForegroundWindow() or 0)
 
@@ -215,6 +218,7 @@ class WindowsClickPort:
                                                 int(item.extra == self.token))
                         if not (item.flags & 1 and item.extra == self.token):
                             stop("user_or_foreign_mouse_input")
+                        self._diagnostic_mouse_tag(int(message), int(item.flags), self.token, int(item.extra))
                 except Exception:
                     self.error = "mouse_guard_callback_failed"
                     stop(self.error)
