@@ -9,8 +9,9 @@ That statement describes the original V5 bridge milestone. The later
 [V8 specialized purchase producer](hand-appearance-evidence.md) automatically
 verified one Sun Bin purchase. [V9](DEPLOYMENT_V9.md) later executed a drag whose
 placement was confirmed from original images. Later [V11](DEPLOYMENT_V11.md)
-automatically verified a separate purchase and deployment. Ready postconditions
-and a full match strategy remain unfinished.
+automatically verified a separate purchase and deployment. [V12](SUSTAINED_V12.md)
+adds reviewed ready and talent postconditions. A full match strategy remains
+unfinished.
 
 ## What the real replay established
 

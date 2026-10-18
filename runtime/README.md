@@ -186,3 +186,22 @@ whose postconditions remain false. Combat and draft-preview observations do not
 establish talent choice, continuous purchasing, dynamic formations, a full match
 policy or win-rate results. Integration used only offline checks and did not
 operate the game. Capture limits and no-deletion policy remain unchanged.
+
+## V12 ready and talent postconditions
+
+[V12 evidence and API](../docs/SUSTAINED_V12.md) records the later live Li Yuanfang
+purchase/deployment, three `ready_verified` results in rounds 3/4/5, and two
+`talent_selection_verified` results across the debug and fresh custom games.
+The V11 ready-pending statements above describe that earlier checkpoint.
+`runtime.phase_perception` and `runtime.transition_verification` provide pure
+phase, retained-intent, ready and selected-talent checks. Source-bound OCR,
+current timestamps, exact window/round and clean owned release are required.
+Saved replay defaults cannot be reported as a new live game result. No native
+adapter or private controller is added by these modules.
+
+Talent details verify the chosen panel, not reward delivery or future effects.
+The old sixth-place debug match is excluded from win-rate samples; the fresh
+match remains unsettled in the frozen handoff. Eligible samples are zero.
+Additional-unit placement, army development, general talents, opponent-aware
+formations and full match strategy remain unfinished. Integration performed
+only offline checks, preserving native guards and screenshot retention limits.

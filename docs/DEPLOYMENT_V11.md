@@ -1,5 +1,9 @@
 # V11: actual automatic purchase and deployment verification
 
+Later [V12](SUSTAINED_V12.md) verified ready transitions in rounds 3, 4 and 5
+and two separately reviewed talent selections. The pending statements below
+describe V11. Full strategy and win-rate evaluation remain incomplete.
+
 In the approved custom game with five Xingyao bots and no other human players,
 the control worker positively recognized Yi Xing and automatically bought Niumo
 for three energy. The purchase verifier confirmed energy 6 to 3 and the added
@@ -134,8 +138,9 @@ was wait-only; unknown scenes received no input. An alternative talent scene
 remained unknown, and malformed round OCR was rejected.
 
 The public round parser is now backed by these actual round observations, but
-the path-bound private cycle is not published here. Next work is a separate
-ready/Cancel verifier, varied round/talent recognition and a finite match policy.
+the path-bound private cycle is not published here. Next work at V11 was a
+ready/Cancel verifier, varied round/talent recognition and a finite match policy;
+V12 adds the reviewed ready/talent paths.
 Buying/selling decisions, talent choice, opponent-aware formation and win-rate
 evaluation remain unfinished. Seeing combat or draft preview is not evidence
 of those capabilities. Foreground mouse interaction in this approved bot-only

@@ -6,7 +6,8 @@ The original Yao receipt remains visual-only. [V9 placement](DEPLOYMENT_V9.md)
 was subsequently confirmed from original images; its live automatic
 deployment postcondition remained unfinished at that checkpoint. Later
 [V11](DEPLOYMENT_V11.md) automatically verified a separate Niumo deployment;
-ready postconditions and full strategy remain unfinished.
+[V12](SUSTAINED_V12.md) then adds reviewed ready and talent postconditions.
+Full strategy remains unfinished.
 
 The control worker submitted one actual purchase of Yao in a five-bot Xingyao
 custom game. It visually inspected original before/after client images and
