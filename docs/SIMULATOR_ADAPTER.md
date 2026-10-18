@@ -18,9 +18,9 @@ The importable `SimulatorAdapter` protocol is in
 
 | Method | Result and obligation |
 | --- | --- |
-| `reset(seed, scenario)` | Called once on a fresh instance; returns audit-only `EpisodeMetadata`. Unknown scenarios and invalid seeds are errors. |
+| `reset(seed, scenario)` | Called once on a fresh instance; returns audit-only `EpisodeMetadata` with a fresh opaque episode ID. Unknown scenarios and invalid seeds are errors. |
 | `observe(player)` | Immutable `PlayerView` with the player's visible `Observation` history and public current-round `World`. No engine object or full-state reference. |
-| `legal_actions(player)` | Immutable `SimAction` tuple using the existing `Move`; bind seat and current revision. Terminal episodes return no actions. |
+| `legal_actions(player)` | Immutable `SimAction` tuple using the existing `Move`; bind episode, seat and current revision. Terminal episodes return no actions. |
 | `step(action)` | Atomically reject illegal/stale actions with `IllegalAction`; accepted steps return a `StepReceipt`. Unexpected exceptions are unconfirmed outcomes and end the harness run without retry. |
 | `export_events()` | Audit-only immutable event sequence with existing `StepTrace` resource-ledger entries. Not an observation or policy input. |
 | `terminal_result()` | `None` until actual terminal confirmation; then a typed `TerminalResult`. A step receipt, action limit or deadline alone is insufficient. |
@@ -35,6 +35,13 @@ must supply a fresh-instance factory, not a pooled mutable engine.
 This first fixture supports only `player-0` and a passive synthetic opponent,
 `opponent-0`. Other observer/action seats are explicitly unsupported. It does
 not establish multiplayer, concurrent turns or a functioning opponent policy.
+
+Revision `original-synthetic-adapter/2` adds required episode binding to metadata,
+views, decision requests and actions. Each reset generates a seed-independent
+opaque ID; observations use it as their match ID. The bridge checks observation,
+view and action agreement, the harness checks the reset binding, and the engine
+rejects a foreign action even if seat, seed, revision and move match. This ID is
+neither a credential nor a sandbox for hostile in-process code.
 
 ## Information boundary and existing strategy
 
@@ -127,6 +134,12 @@ budget exhaustion must be recorded separately; a seed cannot reproduce wall-cloc
 load. Event timestamps use deterministic synthetic time,
 not wall-clock gameplay or perception measurements.
 
+Full reports intentionally differ in their episode IDs. Use
+`contracts.replay_record(report)` for deterministic comparisons: it normalizes
+only the known episode ID and its identical match-ID occurrences, preserving
+source/rule/scenario/seed bindings, actions and ledgers. Never submit this
+comparison-only representation as an action or use it for validity checks.
+
 `run_episode` defaults to 32 accepted steps and two seconds, with validated upper
 bounds of 256 steps and 30 seconds. The demonstration planner has its own 256-node,
 0.2-second budget. Cancellation is latched within a run; it and the monotonic
@@ -146,6 +159,40 @@ private third-party exception text. A step exception may have occurred after a
 mutation: inspect audit evidence and discard that run; never automatically retry.
 Audit export failure itself makes the report failed.
 
+The fixture audit mapping is explicit: one `reset` event at sequence zero with
+no action/ledger, then one `step` event per accepted submitted action. Sequence
+and action revision must agree; actions must match the harness's same-episode
+submissions. Ledger before-values match visible submitted positions; consecutive
+positions, nonnegative resources, conservation, unique zones, capacity and round
+progression must agree. A completed run has complete step coverage and ends in
+an end-round ledger whose round, balance and board match the terminal result.
+Empty, incomplete or conflicting audits fail closed. Rejected payloads are
+discarded, so failure reports remain JSON serializable. A failed step with an
+unconfirmed outcome may expose one additional submitted-action ledger for audit;
+it never contributes a counted terminal result. Other adapters must explicitly
+map to this fixture contract before reuse; these checks are consistency checks,
+not proof that an arbitrary engine implements genuine game rules.
+
+The integration boundary regressions additionally cover malformed/nested audit
+payloads, missing steps, sequence/conservation faults, terminal conflicts and
+same-seed foreign actions. They retain the existing seeded accounting and clock
+tests; no additional simulator mechanism or model dependency is introduced.
+
+## Direct use for strategy comparisons
+
+These fixes prevent corrupted completion samples and cross-run intents from
+distorting comparisons of the strategy core. The existing synthetic fixture can
+compare current offered-card choices, spending versus preserving credits,
+declared pair/threshold interactions and paying the declared replacement costs
+versus keeping the formation. Freeze source/rules/scenario/seed and compare only
+valid completed traces under the same visible-state and budget conditions. Keep
+failures, truncations and cancellations as separate diagnostics.
+
+The public strategy still sees only the current round. These checks do not
+unlock future shop knowledge, real economy, Yixing copying, combat, survival or
+win-rate/placement labels. No further infrastructure expansion is required for
+those bounded synthetic decision contrasts.
+
 These are **cooperative** limits. A blocking factory, policy, engine, audit
 export or cancellation callback cannot be forcibly preempted in process.
 Use a separately supervised worker process and bounded transport before running
@@ -158,7 +205,7 @@ From the repository root, without opening the game:
 
 ```powershell
 python -B -m strategy.simulation --allow-synthetic-fixture --seed 7
-python -B -m unittest discover -s tests -p "test_strategy_simulation.py" -v
+python -B -m unittest discover -s tests -p "test_strategy_simulation*.py" -v
 python -B -m unittest discover -s tests -p "test_strategy_*.py" -v
 ```
 
@@ -169,6 +216,9 @@ worker handoff reported 15 focused tests, 44 combined strategy tests and
 three clock/final-control regressions, bringing focused simulator coverage to
 18 tests. The full strategy-discovery command also executes earlier planning
 ranker fits; use focused simulator tests for a no-training review.
+Current simulation-only discovery runs 28 methods: the 18 simulator methods,
+eight worker boundary methods and two integration regressions. It does not fit
+a model or expand the existing seed/clock combinations.
 The worker's first root-suite run hit the host sandbox's redirected temporary-directory
 permissions; setting `tempfile.tempdir` to a workspace-owned scratch directory
 resolved it, with no product-code changes or native calls.
@@ -239,9 +289,10 @@ in prior notes is not adopted as truth.
 Real-game screenshots, startup, input and match tests remain paused until the
 user explicitly announces an available custom room and authorizes resumption.
 
-## Increment file list
+## Initial simulator increment file list
 
-All ten files are additions; no existing tracked file is modified:
+The initial increment added these ten files. The later boundary repair modifies
+the adapter/contracts/tests and adds its focused review and regression file:
 
 - `strategy/simulation/__init__.py`
 - `strategy/simulation/__main__.py`

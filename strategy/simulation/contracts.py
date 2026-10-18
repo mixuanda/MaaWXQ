@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from ..contracts import Observation, identifier
+from ..contracts import Observation, identifier, to_dict
 from ..rolling.model import Move, World, ids
 from ..rolling.search import StepTrace
 
@@ -30,6 +30,7 @@ class EpisodeMetadata:
     seed: int
     supported_mechanisms: tuple[str, ...]
     unknown_mechanisms: tuple[str, ...]
+    episode_id: str
     synthetic_fixture: bool = field(default=True, init=False)
 
 
@@ -45,6 +46,7 @@ class PlayerView:
     revision: int
     observations: tuple[Observation, ...]
     world: World
+    episode_id: str
 
 
 @dataclass(frozen=True)
@@ -52,9 +54,11 @@ class SimAction:
     player: str
     revision: int
     move: Move
+    episode_id: str
 
     def __post_init__(self):
         identifier(self.player)
+        identifier(self.episode_id)
         if type(self.revision) is not int or self.revision < 0 or not isinstance(self.move, Move):
             raise ValueError("action requires a nonnegative revision and existing Move")
 
@@ -110,3 +114,30 @@ class SimulatorAdapter(Protocol):
     def export_events(self) -> tuple[AuditEvent, ...]: ...
 
     def terminal_result(self) -> TerminalResult | None: ...
+
+
+def replay_record(record):
+    """Comparison-only JSON: normalize opaque run IDs, never actionable bindings.
+
+    Engine/rules/source/seed, visible facts, moves and ledgers remain intact.
+    The original record is unchanged and must be used for all validity checks.
+    """
+    value = to_dict(record)
+    bindings = set()
+    def collect(item):
+        if isinstance(item, dict):
+            if isinstance(item.get("episode_id"), str):
+                bindings.add(item["episode_id"])
+            for child in item.values():
+                collect(child)
+        elif isinstance(item, list):
+            for child in item:
+                collect(child)
+    collect(value)
+    def normalize(item):
+        if isinstance(item, dict):
+            return {key: normalize(child) for key, child in item.items()}
+        if isinstance(item, list):
+            return [normalize(child) for child in item]
+        return "<episode>" if isinstance(item, str) and item in bindings else item
+    return normalize(value)

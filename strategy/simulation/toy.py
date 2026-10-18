@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 import random
 import sys
+from secrets import token_hex
 
 from ..contracts import FieldValue, Observation, Source, digest
 from ..rolling.model import FIELDS, Position, RoundRule, World, move_reasons, moves, transition
@@ -69,10 +70,10 @@ class ToySimulator:
             sequences.append(tuple(sequence))
         opponent_hand = ("private-reserve-" + str(rng.randrange(1000000)),)
         metadata = EpisodeMetadata(
-            "original-toy-simulator", "original-synthetic-adapter/1", None,
+            "original-toy-simulator", "original-synthetic-adapter/2", None,
             source_digest(), ".".join(map(str, sys.version_info[:3])), BASELINE_COMMIT,
             RULES_VERSION, spec.scenario_id,
-            digest(spec), seed, SUPPORTED, UNKNOWN)
+            digest(spec), seed, SUPPORTED, UNKNOWN, "episode-" + token_hex(16))
         self._spec, self._rng, self._hidden = spec, rng, tuple(sequences)
         self._opponent_hand = opponent_hand
         self._revision = 0
@@ -110,7 +111,7 @@ class ToySimulator:
     def _snapshot(self, *, start=False):
         pos = self._position
         now = EPOCH + timedelta(seconds=self._revision + 1)
-        shared = dict(match_id="synthetic-adapter-match", observed_at=now, ingested_at=now,
+        shared = dict(match_id=self._metadata.episode_id, observed_at=now, ingested_at=now,
                       source=Source("synthetic", "synthetic-fixture:adapter/1"),
                       round=pos.round, phase=self._world.phase, context_confidence=1,
                       game_build=self._world.build, rules_version=self._world.version)
@@ -137,18 +138,19 @@ class ToySimulator:
         frame = RoundRule(self._position.round, self._spec.income,
                           self._position.offer_ids, self._position.capacity, 1)
         public_world = replace(self._world, rounds=(frame,))
-        return PlayerView(player, self._revision, self._observations, public_world)
+        return PlayerView(player, self._revision, self._observations, public_world, self._metadata.episode_id)
 
     def legal_actions(self, player):
         self._ready(player)
         if self._terminal is not None:
             return ()
-        return tuple(SimAction(player, self._revision, move) for move in moves(self._position)
+        return tuple(SimAction(player, self._revision, move, self._metadata.episode_id) for move in moves(self._position)
                      if not move_reasons(self._position, self._world, move, self._spec.bans))
 
     def step(self, action):
         self._ready()
-        if not isinstance(action, SimAction) or action not in self.legal_actions(PLAYER):
+        if (not isinstance(action, SimAction) or action.episode_id != self._metadata.episode_id
+                or action not in self.legal_actions(PLAYER)):
             raise IllegalAction("illegal_stale_or_terminal_action")
         before = self._position
         world = self._world

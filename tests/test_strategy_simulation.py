@@ -10,7 +10,7 @@ from strategy.policy import Policy
 from strategy.rolling.model import Move, RoundRule, read_position
 from strategy.rolling.search import Budget, plan
 from strategy.simulation.bridge import decision_input, rolling_policy
-from strategy.simulation.contracts import IllegalAction, SimAction, SimulatorError, StepReceipt, TerminalResult
+from strategy.simulation.contracts import IllegalAction, SimAction, SimulatorError, StepReceipt, TerminalResult, replay_record
 from strategy.simulation.runner import RunBudget, run_episode
 from strategy.simulation.toy import OPPONENT, PLAYER, ToySimulator
 
@@ -36,7 +36,8 @@ def action(sim, label):
 class SimulationTests(unittest.TestCase):
     def test_seeded_replay_and_independent_instances(self):
         runs = [run_episode(ToySimulator, end_round, seed=7, scenario=SCENARIO) for _ in range(2)]
-        self.assertEqual(runs[0], runs[1])
+        self.assertNotEqual(runs[0].metadata.episode_id, runs[1].metadata.episode_id)
+        self.assertEqual(replay_record(runs[0]), replay_record(runs[1]))
         self.assertEqual(runs[0].status, "completed")
         self.assertEqual(runs[0].terminal.completed_rounds, 3)
         self.assertEqual(runs[0].real_match_results, 0)
@@ -53,7 +54,7 @@ class SimulationTests(unittest.TestCase):
         sim = ToySimulator()
         for call in (lambda: sim.observe(PLAYER), lambda: sim.legal_actions(PLAYER),
                      sim.terminal_result, sim.export_events, sim.audit_snapshot,
-                     lambda: sim.step(SimAction(PLAYER, 0, Move("hold")))):
+                     lambda: sim.step(SimAction(PLAYER, 0, Move("hold"), "not-started"))):
             with self.assertRaises(SimulatorError):
                 call()
         for seed in (-1, True, 2**64, "7"):
@@ -121,7 +122,7 @@ class SimulationTests(unittest.TestCase):
         self.assertEqual(sim.audit_snapshot().position.discarded_ids, tuple(GOLDEN["expected_discarded"]))
         self.assertEqual(sim.observe(PLAYER).observations[-1].kind, "match_end")
         self.assertEqual(sim.legal_actions(PLAYER), ())
-        self.assert_rejected_unchanged(sim, SimAction(PLAYER, 7, Move("end_round")))
+        self.assert_rejected_unchanged(sim, SimAction(PLAYER, 7, Move("end_round"), sim.observe(PLAYER).episode_id))
         with self.assertRaises(SimulatorError):
             decision_input(sim.observe(PLAYER), ())
 
@@ -136,12 +137,13 @@ class SimulationTests(unittest.TestCase):
     def test_illegal_actions_are_atomic_including_resources_bans_and_stale_revision(self):
         sim = initialized(scenario="synthetic-zero-budget-v1")
         self.assertFalse(any(x.move.kind == "buy" for x in sim.legal_actions(PLAYER)))
-        self.assert_rejected_unchanged(sim, SimAction(PLAYER, 0, Move("buy", "unit-d")))
+        self.assert_rejected_unchanged(sim, SimAction(PLAYER, 0, Move("buy", "unit-d"), sim.observe(PLAYER).episode_id))
         sim = initialized()
-        for attempt in (None, SimAction("player-1", 0, Move("hold")),
-                        SimAction(PLAYER, 0, Move("sell", "unit-a")),
-                        SimAction(PLAYER, 0, Move("deploy", "unit-c")),
-                        SimAction(PLAYER, 0, Move("buy", "absent"))):
+        episode = sim.observe(PLAYER).episode_id
+        for attempt in (None, SimAction("player-1", 0, Move("hold"), episode),
+                        SimAction(PLAYER, 0, Move("sell", "unit-a"), episode),
+                        SimAction(PLAYER, 0, Move("deploy", "unit-c"), episode),
+                        SimAction(PLAYER, 0, Move("buy", "absent"), episode)):
             self.assert_rejected_unchanged(sim, attempt)
         purchase = action(sim, "buy:unit-d")
         sim.step(purchase)
@@ -149,9 +151,9 @@ class SimulationTests(unittest.TestCase):
         banned = initialized(scenario="synthetic-banned-v1")
         banned.step(action(banned, "end_round"))
         self.assertIn("unit-c", banned.audit_snapshot().position.offer_ids)
-        self.assert_rejected_unchanged(banned, SimAction(PLAYER, 1, Move("buy", "unit-c")))
+        self.assert_rejected_unchanged(banned, SimAction(PLAYER, 1, Move("buy", "unit-c"), banned.observe(PLAYER).episode_id))
         with self.assertRaises(ValueError):
-            SimAction(PLAYER, True, Move("hold"))
+            SimAction(PLAYER, True, Move("hold"), episode)
 
     def test_existing_strategy_bridge_and_no_future_horizon(self):
         seen = []
@@ -185,7 +187,7 @@ class SimulationTests(unittest.TestCase):
             with self.assertRaises(SimulatorError):
                 decision_input(bad, sim.legal_actions(PLAYER))
         with self.assertRaises(SimulatorError):
-            decision_input(view, (SimAction(PLAYER, 99, Move("hold")),))
+            decision_input(view, (SimAction(PLAYER, 99, Move("hold"), view.episode_id),))
 
     def test_step_time_and_cancel_budgets_never_claim_completion(self):
         sim = ToySimulator()

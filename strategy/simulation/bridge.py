@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from ..contracts import MatchState
+from ..contracts import MatchState, identifier
 from ..policy import Policy
 from ..rolling.model import World
 from ..rolling.search import Budget, plan
@@ -18,6 +18,7 @@ class DecisionInput:
     state: MatchState
     world: World
     legal_actions: tuple[SimAction, ...]
+    episode_id: str
 
 
 def decision_input(view: PlayerView, legal_actions: tuple[SimAction, ...]) -> DecisionInput:
@@ -29,6 +30,9 @@ def decision_input(view: PlayerView, legal_actions: tuple[SimAction, ...]) -> De
     if (not isinstance(view, PlayerView) or not view.observations
             or any(x.source.kind != "synthetic" for x in view.observations)):
         raise SimulatorError("synthetic_observation_required")
+    identifier(view.episode_id)
+    if any(x.match_id != view.episode_id for x in view.observations):
+        raise SimulatorError("observation_episode_mismatch")
     state = MatchState()
     now = max(x.ingested_at for x in view.observations)
     for event in view.observations:
@@ -39,9 +43,10 @@ def decision_input(view: PlayerView, legal_actions: tuple[SimAction, ...]) -> De
         raise SimulatorError("current_synthetic_round_required")
     if not isinstance(legal_actions, tuple) or any(
             not isinstance(x, SimAction) or x.player != view.player or x.revision != view.revision
+            or x.episode_id != view.episode_id
             for x in legal_actions):
         raise SimulatorError("action_binding_mismatch")
-    return DecisionInput(view.player, view.revision, state, view.world, legal_actions)
+    return DecisionInput(view.player, view.revision, state, view.world, legal_actions, view.episode_id)
 
 
 def rolling_policy(request: DecisionInput) -> SimAction | None:

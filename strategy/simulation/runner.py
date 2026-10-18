@@ -4,14 +4,81 @@ from dataclasses import dataclass, field
 import time
 from typing import Callable
 
-from ..contracts import number
+from ..contracts import identifier, number, to_dict
+from ..rolling.model import ids, read_position
+from ..rolling.search import StepTrace
 from .bridge import DecisionInput, decision_input
 from .contracts import (AuditEvent, EpisodeMetadata, IllegalAction, SimulatorAdapter,
-                        StepReceipt, TerminalResult)
+                        SimAction, StepReceipt, TerminalResult)
 
 
 class _ClockFault(RuntimeError):
     """Deadline evidence is unavailable; no dependent action may be submitted."""
+
+
+def _check_audit(events, submitted, steps, episode_id, *, uncertain=False):
+    """Fixture mapping: one reset, then one event per accepted submitted action."""
+    if (not events or type(events[0].sequence) is not int
+            or events[0] != AuditEvent(0, "reset")):
+        raise ValueError("audit_reset_missing")
+    count = len(events) - 1
+    if not steps <= count <= (len(submitted) if uncertain else steps):
+        raise ValueError("audit_step_coverage_mismatch")
+    previous = None
+    for sequence, event in enumerate(events[1:], 1):
+        action, observed = submitted[sequence - 1]
+        ledger = event.ledger
+        if (type(event.sequence) is not int or event.sequence != sequence or event.kind != "step"
+                or type(event.action) is not SimAction or event.action != action
+                or action.episode_id != episode_id or action.revision != sequence - 1
+                or type(ledger) is not StepTrace or ledger.analysis_only is not True
+                or ledger.move != action.move.label):
+            raise ValueError("audit_action_binding_mismatch")
+        for value in (ledger.round, ledger.next_round, ledger.credits_before, ledger.credits_after,
+                      ledger.credits_spent, ledger.income_received, ledger.capacity_after):
+            if type(value) is not int or value < 0:
+                raise ValueError("audit_number_invalid")
+        if (not number(ledger.switching_utility_cost) or ledger.switching_utility_cost < 0
+                or ledger.round != observed.round or ledger.credits_before != observed.credits
+                or ledger.board_before != observed.board_ids
+                or ledger.credits_after != ledger.credits_before - ledger.credits_spent + ledger.income_received):
+            raise ValueError("audit_resource_mismatch")
+        zones = ledger.board_after + ledger.hand_after + ledger.offers_after + ledger.discarded_after
+        ids(zones)
+        ids(ledger.board_before)
+        if len(ledger.board_after) > ledger.capacity_after:
+            raise ValueError("audit_capacity_mismatch")
+        if ledger.next_round not in (ledger.round, ledger.round + 1):
+            raise ValueError("audit_round_discontinuity")
+        if ledger.next_round == ledger.round and (ledger.capacity_after != observed.capacity
+                or (action.move.kind == "end_round" and ledger.offers_after != observed.offer_ids)):
+            raise ValueError("audit_undeclared_same_round_change")
+        if action.move.kind != "end_round" and (ledger.next_round != ledger.round or ledger.income_received):
+            raise ValueError("audit_unearned_income")
+        if action.move.kind == "end_round" and (ledger.credits_spent or ledger.switching_utility_cost
+                or ledger.board_after != observed.board_ids or ledger.hand_after != observed.hand_ids
+                or ledger.discarded_after != observed.discarded_ids):
+            raise ValueError("audit_settlement_mutated_owned_units")
+        if previous is not None and (
+                (previous.next_round, previous.credits_after, previous.board_after, previous.hand_after,
+                 previous.offers_after, previous.discarded_after, previous.capacity_after)
+                != (observed.round, observed.credits, observed.board_ids, observed.hand_ids,
+                    observed.offer_ids, observed.discarded_ids, observed.capacity)):
+            raise ValueError("audit_position_discontinuity")
+        previous = ledger
+
+
+def _check_terminal(events, terminal, submitted, steps):
+    if not steps or steps != len(submitted) or len(events) != steps + 1:
+        raise ValueError("terminal_trace_incomplete")
+    last = events[-1].ledger
+    rounds = tuple(event.ledger.round for event in events[1:] if event.action.move.kind == "end_round")
+    if (events[-1].action.move.kind != "end_round" or last.next_round != last.round
+            or last.income_received or submitted[0][1].round != 1
+            or rounds != tuple(range(1, terminal.completed_rounds + 1))
+            or terminal.completed_rounds != last.round or terminal.final_credits != last.credits_after
+            or terminal.final_board != last.board_after):
+        raise ValueError("terminal_audit_mismatch")
 
 
 @dataclass(frozen=True)
@@ -52,6 +119,7 @@ def run_episode(factory: Callable[[], SimulatorAdapter], policy: Callable[[Decis
     """
     adapter = metadata = None
     steps = 0
+    submitted = []
     stopped = False
     started = last_clock = None
 
@@ -78,13 +146,27 @@ def run_episode(factory: Callable[[], SimulatorAdapter], policy: Callable[[Decis
         events, audit_status = (), "not_started"
         if adapter is not None and metadata is not None:
             try:
-                events = adapter.export_events()
-                if not isinstance(events, tuple) or any(not isinstance(x, AuditEvent) for x in events):
+                exported = adapter.export_events()
+                if not isinstance(exported, tuple) or any(not isinstance(x, AuditEvent) for x in exported):
                     raise TypeError("invalid audit events")
-                audit_status = "exported"
+                for event in exported:
+                    to_dict(event)  # Reject malformed nested values before retaining the payload.
             except Exception:
                 # An incomplete audit must not masquerade as a completed run.
                 status, reason, terminal, audit_status = "failed", "audit_export_failed", None, "failed"
+            else:
+                try:
+                    _check_audit(exported, submitted, steps, metadata.episode_id,
+                                 uncertain=reason == "step_failed_outcome_unconfirmed")
+                except Exception:
+                    status, reason, terminal, audit_status = "failed", "audit_integrity_failed", None, "failed"
+                else:
+                    events, audit_status = exported, "exported"
+                    if status == "completed":
+                        try:
+                            _check_terminal(events, terminal, submitted, steps)
+                        except Exception:
+                            status, reason, terminal = "failed", "terminal_audit_mismatch", None
         if status == "completed":
             try:
                 why = stop_reason()
@@ -113,6 +195,7 @@ def run_episode(factory: Callable[[], SimulatorAdapter], policy: Callable[[Decis
         metadata = adapter.reset(seed, scenario)
         if not isinstance(metadata, EpisodeMetadata) or not metadata.synthetic_fixture:
             raise TypeError("synthetic metadata required")
+        identifier(metadata.episode_id)
         if (result := interrupted()) is not None:
             return result
         while True:
@@ -130,12 +213,17 @@ def run_episode(factory: Callable[[], SimulatorAdapter], policy: Callable[[Decis
             view = adapter.observe(player)
             if (result := interrupted()) is not None:
                 return result
+            if view.episode_id != metadata.episode_id:
+                raise ValueError("view_episode_mismatch")
             stage = "legal_actions"
             legal = adapter.legal_actions(player)
             if (result := interrupted()) is not None:
                 return result
             stage = "bridge"
             request = decision_input(view, legal)
+            observed, unknown = read_position(request.state, request.world)
+            if unknown:
+                raise ValueError("audit_initial_position_unknown")
             if (result := interrupted()) is not None:
                 return result
             stage = "policy"
@@ -150,6 +238,7 @@ def run_episode(factory: Callable[[], SimulatorAdapter], policy: Callable[[Decis
             if (result := interrupted()) is not None:
                 return result
             stage = "step"
+            submitted.append((action, observed))
             receipt = adapter.step(action)
             steps += 1
             if (result := interrupted()) is not None:
