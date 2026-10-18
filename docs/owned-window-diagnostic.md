@@ -1,13 +1,14 @@
 # Owned-window diagnostic: one operator entry
 
-**This ownership-evidence revision has no new live input evidence.** The previous
+**The current allocator has not yet passed a live input run.** The previous
 entry's 2026-10-18 16:33 UTC report passed deadline rejection and the readiness
 wait, then delivered one DOWN/UP to the target with a native batch return of 3.
 The click phase failed because the hook marked both events as injected but their
 token did not match; physical emergency and owned-only release did not run.
 This command remains the stable entry; earlier standalone probes are not needed.
-This evidence-only revision requests no additional user run. Retain the existing
-report while the supported native-tool runtime is investigated.
+Retain that report: it does not validate the updated allocator below. The next
+owned-window run belongs to the single control worker after integration; do not
+repeat the unchanged failing version or infer physical-key success from the UI.
 
 From the repository directory in an ordinary **non-administrator Windows
 PowerShell**, use the existing Python installation:
@@ -119,9 +120,33 @@ cannot produce mixed counters/records; hashing and formatting occur after unlock
 
 A low-32 match or a zero/sign-extension pattern is diagnostic evidence, never
 permission to accept the event. `injected=true` alone does not establish its
-origin. Token generation, complete-token equality, action budget, native send,
-owned release and acceptance rules are unchanged. The production port only gains
-a no-op observation hook; source pinning is updated for that exact change.
+origin. Complete-token equality, injection-flag checks, action budget, native
+send, owned release and acceptance rules are unchanged. The port retains its
+passive observation hook; the diagnostic's source pin follows the reviewed broker.
+
+The allocator now creates the complete tag with `secrets.randbits(32)`, rejects
+zero and never reuses an allocated tag within the process lifetime. It retains
+retired tags under a separate lock so an old broker's delayed event cannot match
+a later allocation. Even values and bit-31-set values are supported. At 65,536
+retained values, or after 32 zero/duplicate draws, allocation fails closed.
+`token_generation=uniform_nonzero_uint32_no_process_reuse/1` reports this change.
+
+Two previous owned-window runs observed zero extension of the submitted tag's
+low 32 bits on this machine, while the ctypes send buffers retained all submitted
+bits. The exact native component responsible remains unknown. Generating a
+complete 32-bit value addresses that observed transport boundary without masking
+received values or accepting high-word/sign-extension aliases. This does not
+establish how every Windows installation transports extra information.
+
+Process-local uniqueness does not imply uniqueness across other applications or
+process restarts. These random tags correlate events; they are not authentication
+and cannot distinguish deliberately forged exact tags. Native success with the
+new allocator remains unverified until an owned-window run shows exact full-value
+MOVE/DOWN/UP matches, one widget DOWN/UP and confirmed cleanup. Real emergency and
+Right Shift evidence is still required for their stages, and the game gate stays
+closed. The allocator/guard regression suite plus the Chinese UI checks pass
+70 offline tests with real Windows API and Tk window creation blocked; compilation
+passes and the entire broker plus existing port guard methods are AST-identical.
 
 The entry does not call [GetMessageExtraInfo](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessageextrainfo). That API reads the current thread's
 message-queue extra information, while a low-level hook receives its event data

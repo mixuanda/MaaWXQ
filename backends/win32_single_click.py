@@ -26,6 +26,28 @@ class NativeUnavailable(RuntimeError):
     pass
 
 
+# An opaque correlation tag, NOT authentication. This machine's mouse path
+# returns only 32 bits even though the API fields retain their ULONG_PTR ABI.
+# Allocate the complete tag in that range; NEVER mask a received tag to match.
+INPUT_TAG_GENERATION = "uniform_nonzero_uint32_no_process_reuse/1"
+_INPUT_TAG_LOCK = threading.Lock()
+_USED_INPUT_TAGS = set()  # Keep retired tags too, so delayed events cannot reuse one.
+_INPUT_TAG_LIMIT = 65536  # Bound retained memory; exhaustion refuses a new port.
+
+
+def _new_input_tag():
+    """Unique per broker in this process lifetime; no cross-process guarantee."""
+    with _INPUT_TAG_LOCK:
+        if len(_USED_INPUT_TAGS) >= _INPUT_TAG_LIMIT:
+            raise NativeUnavailable("input_tag_budget_exhausted")
+        for _ in range(32):  # Broken/repeating entropy must not hang or reuse a tag.
+            value = secrets.randbits(32)
+            if value != 0 and value not in _USED_INPUT_TAGS:
+                _USED_INPUT_TAGS.add(value)
+                return value
+        raise NativeUnavailable("unique_input_tag_unavailable")
+
+
 @dataclass(frozen=True)
 class Binding:
     hwnd: int
@@ -76,7 +98,7 @@ class WindowsClickPort:
         self.observe = observer
         self.user = c.WinDLL("user32", use_last_error=True)
         self.kernel = c.WinDLL("kernel32", use_last_error=True)
-        self.token = secrets.randbits(c.sizeof(c.c_void_p) * 8 - 1) | 1
+        self.token = _new_input_tag()
         self.ready = threading.Event()
         self.closed = threading.Event()
         self.error = None

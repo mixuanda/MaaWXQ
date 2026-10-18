@@ -18,7 +18,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_BROKER_CANONICAL_HASH = "f1e60c0b872765419ab4fff867bd9bd3ef0c2e0affe803a5022b02553f4a2a33"
+EXPECTED_BROKER_CANONICAL_HASH = "4c0e382c34601ea609e319e331ef1ca1d6ea9106e69866b96b3bbfa1d2075724"
 sys.path.insert(0, str(ROOT))
 import backends.win32_single_click as native
 from window_identity import find_windows, inspect_window
@@ -248,7 +248,7 @@ class OwnedDiagnosticPort(native.WindowsClickPort):
                     "matches_created_token": expected == created_token,
                     **describe_mouse_tag(expected, observed, bits, self.tag_fingerprint_key)}
         return {"revision": "full-width-mouse-tags/1", "layout": describe_native_layout(self),
-                "token_generation": "randbits(pointer_bits - 1) | 1",
+                "token_generation": native.INPUT_TAG_GENERATION,
                 "token_unchanged_since_creation": current_token == created_token,
                 "created_token_bits": created_token.bit_length(),
                 "mouse_events_seen": total,
