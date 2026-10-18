@@ -6,7 +6,8 @@ from ..contracts import CandidateAction, ResourceCost, Source
 from ..policy import Policy, filter_candidates, generate_candidates
 from ..rules import Requirement, Rule, RuleRegistry
 from .memory import MemoryPolicy, assess
-from .model import DOMAIN, FIELDS, Move, World, move_reasons, moves, read_position, support_reasons
+from .model import (DOMAIN, FIELDS, Move, SupportScope, World, move_reasons, moves,
+                    planning_scope, read_position, support_reasons)
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,7 @@ class Batch:
     rejections: tuple[tuple[str, tuple[str, ...]], ...]
     reasons: tuple[str, ...]
     registry: RuleRegistry | None = None
+    support_scope: SupportScope | None = None
 
 
 def generate(state, world, opponent_id, *, now, horizon=2, policy=Policy(),
@@ -39,9 +41,10 @@ def generate(state, world, opponent_id, *, now, horizon=2, policy=Policy(),
     pos, reasons = read_position(state, world)
     if pos is None:
         return Batch((), (), reasons)
-    reasons = support_reasons(world, pos.round, horizon)
+    scope = planning_scope(world, pos, horizon, state.confirmed_bans)
+    reasons = support_reasons(world, pos.round, horizon, scope=scope)
     if reasons:
-        return Batch((), (), reasons)
+        return Batch((), (), reasons, support_scope=scope)
     if (not state.events or any(x.source.kind != "synthetic" for x in state.events)
             or any(x.source.kind != "synthetic" for x in state.fields)):
         return Batch((), (), ("real_state_evidence_not_supported_by_toy_world",))
@@ -54,8 +57,14 @@ def generate(state, world, opponent_id, *, now, horizon=2, policy=Policy(),
     specs = moves(pos)
     if len(specs) > policy.max_candidates:
         return Batch((), (), ("candidate_budget_exhausted",))
-    rules, mapping = [], {}
+    rules, mapping, rejected = [], {}, []
     for move in specs:
+        intrinsic = move_reasons(pos, world, move, state.confirmed_bans)
+        if intrinsic:
+            # Reject before constructing ResourceCost: a prohibited offer can
+            # have an unknown price without becoming a legal/zero-cost action.
+            rejected.append((move.label, intrinsic))
+            continue
         key = "rolling:" + move.label
         required = tuple(Requirement("self." + name) for name in FIELDS)
         tags, costs = (), ()
@@ -84,7 +93,7 @@ def generate(state, world, opponent_id, *, now, horizon=2, policy=Policy(),
     registry = RuleRegistry(world.build, world.version, DOMAIN, True, tuple(rules))
     candidates = generate_candidates(state, registry, now=issued_at or now, policy=policy)
     evaluations = filter_candidates(state, registry, candidates, now=now, policy=policy)
-    accepted, rejected = [], []
+    accepted = []
     for evaluation in evaluations:
         move = mapping[evaluation.candidate.rule_id]
         why = tuple(dict.fromkeys(evaluation.reasons + move_reasons(pos, world, move, state.confirmed_bans)))
@@ -95,7 +104,7 @@ def generate(state, world, opponent_id, *, now, horizon=2, policy=Policy(),
                                    belief.evidence_digest, horizon))
     reasons = () if accepted else tuple(dict.fromkeys(
         ["no_supported_immediate_move"] + [why for _, reasons in rejected for why in reasons]))
-    return Batch(tuple(accepted), tuple(rejected), reasons, registry)
+    return Batch(tuple(accepted), tuple(rejected), reasons, registry, scope)
 
 
 def revalidate(advice, state, world, *, now, policy=Policy(), memory_policy=MemoryPolicy()):

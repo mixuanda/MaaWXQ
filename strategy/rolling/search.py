@@ -9,7 +9,8 @@ from ..policy import Policy
 from .actions import Advice, generate, revalidate
 from .economy import EconomyObjective
 from .memory import Belief, MemoryPolicy, assess
-from .model import DOMAIN, Formation, Position, World, formation, move_reasons, moves, read_position, transition
+from .model import (DOMAIN, Formation, Position, SupportScope, World, formation,
+                    move_reasons, moves, read_position, transition)
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,7 @@ class Result:
     evaluator_version: str
     final_gate: str
     economy: EconomyObjective = EconomyObjective()
+    support_scope: SupportScope | None = None
     schema_version: str = "advisory-rolling-plan/1"
     domain: str = field(default=DOMAIN, init=False)
     execution_allowed: bool = field(default=False, init=False)
@@ -204,7 +206,7 @@ def plan(state, world, opponent_id, *, now, budget=Budget(), policy=Policy(),
                       now, status, selected, tuple(sorted(choices.values(), key=alternative_key)),
                       belief, tuple(dict.fromkeys(reasons)), root.rejections if root else (),
                       termination, nodes, duplicates, completed, exhaustive, budget,
-                      evaluator_version, gate, economy)
+                      evaluator_version, gate, economy, root.support_scope if root else None)
 
     def fallback(reason):
         nonlocal termination

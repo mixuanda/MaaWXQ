@@ -230,13 +230,59 @@ def read_position(state, world):
     return pos, ()
 
 
-def support_reasons(world, first_round, horizon):
+@dataclass(frozen=True)
+class SupportScope:
+    potential_unit_ids: tuple[str, ...]
+    purchase_unit_ids: tuple[str, ...]
+    required_link_ids: tuple[str, ...]
+    excluded_unknowns: tuple[str, ...]
+    required_unknowns: tuple[str, ...]
+    criterion: str = "conservative_declared_horizon_support_not_exact_reachability"
+
+
+def planning_scope(world, pos, horizon, bans):
+    """Prove some parameters irrelevant without filling any unknown value.
+
+    This is a superset of possible own units, not an affordability prediction.
+    Existing board units remain relevant even if a ban contradicts that board.
+    """
+    validate_position(pos, world)
+    owned = set(pos.board_ids + pos.hand_ids + pos.discarded_ids)
+    prohibited = {card.unit_id for card in world.cards
+                  if {card.unit_id, *card.ban_tags} & set(bans)}
+    offers = set(pos.offer_ids)
+    for round_number in range(pos.round + 1, pos.round + horizon):
+        frame = world.frame(round_number)
+        if frame is not None and frame.offers is not None:
+            offers.update(frame.offers)
+    purchase = offers - owned - prohibited
+    potential = set(pos.board_ids) | (set(pos.hand_ids) - prohibited) | purchase
+    required = {link.link_id for link in world.pairs if set(link.units) <= potential}
+    required.update(link.link_id for link in world.thresholds
+                    if sum(link.role in world.card(unit).roles for unit in potential) >= link.minimum)
+    excluded, needed = [], []
+    for card in world.cards:
+        if card.value is None:
+            (needed if card.unit_id in potential else excluded).append("card:" + card.unit_id + ":value")
+        if card.price is None:
+            (needed if card.unit_id in purchase else excluded).append("card:" + card.unit_id + ":price")
+    for link in (*world.pairs, *world.thresholds):
+        if link.value is None:
+            (needed if link.link_id in required else excluded).append("link:" + link.link_id + ":value")
+    return SupportScope(tuple(sorted(potential)), tuple(sorted(purchase)),
+                        tuple(sorted(required)), tuple(sorted(excluded)), tuple(sorted(needed)))
+
+
+def support_reasons(world, first_round, horizon, *, scope=None):
     reasons = []
     if world.verification != "declared_synthetic":
         reasons.append("rules_unverified")
-    if any(x.value is None or x.price is None for x in world.cards):
+    if any((x.value is None and (scope is None or x.unit_id in scope.potential_unit_ids))
+           or (x.price is None and (scope is None or x.unit_id in scope.purchase_unit_ids))
+           for x in world.cards):
         reasons.append("unit_value_or_price_unknown")
-    if any(x.value is None for x in (*world.pairs, *world.thresholds)):
+    if any(x.value is None and (scope is None or x.link_id in scope.required_link_ids)
+           for x in (*world.pairs, *world.thresholds)):
         reasons.append("interaction_utility_unknown")
     if any(x is None for x in (world.replace_credit_cost, world.replace_utility_cost,
                               world.deploy_credit_cost)):
@@ -314,7 +360,9 @@ def transition(pos, world, move, *, bans, final_round):
     """A final settlement ends the horizon; it does not invent another round."""
     if type(final_round) is not int or not pos.round <= final_round <= pos.round + 3:
         raise ValueError("invalid transition horizon")
-    unsupported = support_reasons(world, pos.round, final_round - pos.round + 1)
+    horizon = final_round - pos.round + 1
+    scope = planning_scope(world, pos, horizon, bans)
+    unsupported = support_reasons(world, pos.round, horizon, scope=scope)
     if unsupported:
         raise ValueError(",".join(unsupported))
     reasons = move_reasons(pos, world, move, bans)
