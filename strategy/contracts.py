@@ -53,7 +53,7 @@ class Source:
     reference: str
 
     def __post_init__(self):
-        if self.kind not in ("manual_annotation", "legacy_manual", "synthetic", "reviewed_rule"):
+        if self.kind not in ("manual_annotation", "legacy_manual", "screen_recognition", "synthetic", "reviewed_rule"):
             raise ValueError("unsupported source kind")
         identifier(self.reference)
 

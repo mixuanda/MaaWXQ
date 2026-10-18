@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Machine-readable strategy result with bound intent",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "engine",
+    "rule_domain",
+    "execution_allowed",
+    "points"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "strategy-session-report/1"
+    },
+    "execution_allowed": {
+      "const": false
+    },
+    "points": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "required": [
+          "point_id",
+          "status",
+          "action_proposal",
+          "blocking_gaps",
+          "ranking",
+          "core_result"
+        ],
+        "properties": {
+          "action_proposal": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "schema_version": {
+                "const": "strategy-action-proposal/1"
+              },
+              "execution_allowed": {
+                "const": false
+              },
+              "intent": {
+                "type": "object",
+                "required": [
+                  "candidate_id",
+                  "match_id",
+                  "state_version",
+                  "rules_digest",
+                  "rules_domain",
+                  "ban_version",
+                  "operation",
+                  "issued_at",
+                  "expires_at",
+                  "preconditions",
+                  "expected_results"
+                ]
+              },
+              "analysis_move": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "memory_digest": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "world_digest": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "controller_obligations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "postcondition_contract": {
+                "const": "required_from_reviewed_game_adapter_not_inferred_from_score"
+              }
+            },
+            "required": [
+              "schema_version",
+              "execution_allowed",
+              "intent",
+              "controller_obligations",
+              "postcondition_contract"
+            ],
+            "additionalProperties": false
+          },
+          "blocking_gaps": {
+            "type": "array"
+          },
+          "ranking": {
+            "type": "array"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "schema_version": "strategy-session/1",
+  "engine": "synthetic_rolling",
+  "label": "Synthetic input session; no real WXQ or Yixing mechanics asserted",
+  "rule_data": {
+    "version": "toy-rolling-pivot-1",
+    "cards": [
+      {
+        "unit_id": "A",
+        "value": 1,
+        "price": 0,
+        "roles": [],
+        "ban_tags": []
+      },
+      {
+        "unit_id": "B",
+        "value": 6,
+        "price": 2,
+        "roles": [],
+        "ban_tags": []
+      },
+      {
+        "unit_id": "C",
+        "value": 2,
+        "price": 1,
+        "roles": [],
+        "ban_tags": []
+      },
+      {
+        "unit_id": "E",
+        "value": 3,
+        "price": 1,
+        "roles": [],
+        "ban_tags": []
+      }
+    ],
+    "pairs": [
+      {
+        "link_id": "pair-ac",
+        "units": [
+          "A",
+          "C"
+        ],
+        "value": 8
+      },
+      {
+        "link_id": "pair-ae",
+        "units": [
+          "A",
+          "E"
+        ],
+        "value": 6
+      }
+    ],
+    "thresholds": [],
+    "profiles": [
+      {
+        "profile_id": "guard",
+        "board_ids": [
+          "enemy-base",
+          "guard"
+        ],
+        "disabled_links": [],
+        "role_adjustments": []
+      },
+      {
+        "profile_id": "breaker",
+        "board_ids": [
+          "enemy-base",
+          "breaker"
+        ],
+        "disabled_links": [
+          "pair-ac",
+          "pair-ae"
+        ],
+        "role_adjustments": []
+      }
+    ],
+    "rounds": [
+      {
+        "round": 1,
+        "income_on_entry": 0,
+        "offers": [],
+        "capacity": 2,
+        "utility_weight": 1
+      }
+    ],
+    "replace_credit_cost": 1,
+    "replace_utility_cost": 2,
+    "deploy_credit_cost": 0,
+    "verification": "declared_synthetic",
+    "domain": "test_rules_not_gameplay",
+    "build": "synthetic-rolling-build-1",
+    "phase": "test_preparation",
+    "schema_version": "toy-rolling-world/1"
+  },
+  "decision_points": [
+    {
+      "point_id": "guard-links",
+      "decision_at": "2030-01-01T00:00:00+00:00",
+      "opponent_id": "toy-opponent",
+      "budget": {
+        "horizon": 1,
+        "max_prep_actions": 3,
+        "max_nodes": 512,
+        "max_seconds": 1
+      }
+    },
+    {
+      "point_id": "guard-reserve",
+      "decision_at": "2030-01-01T00:00:00+00:00",
+      "opponent_id": "toy-opponent",
+      "budget": {
+        "horizon": 1,
+        "max_prep_actions": 3,
+        "max_nodes": 512,
+        "max_seconds": 1
+      },
+      "economy": {
+        "reserve_target": 1,
+        "value_per_credit": 4
+      }
+    },
+    {
+      "point_id": "fresh-breaker",
+      "decision_at": "2030-01-01T00:00:01+00:00",
+      "opponent_id": "toy-opponent",
+      "budget": {
+        "horizon": 1,
+        "max_prep_actions": 3,
+        "max_nodes": 512,
+        "max_seconds": 1
+      }
+    },
+    {
+      "point_id": "guard-with-c-banned",
+      "decision_at": "2030-01-01T00:00:02+00:00",
+      "opponent_id": "toy-opponent",
+      "budget": {
+        "horizon": 1,
+        "max_prep_actions": 3,
+        "max_nodes": 512,
+        "max_seconds": 1
+      }
+    }
+  ]
+}

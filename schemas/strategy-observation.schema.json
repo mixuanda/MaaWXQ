@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "One strategy observation per JSONL line",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "const": "unknown"
+      }
+    },
+    "match_id": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "const": "unknown"
+      }
+    },
+    "kind": {
+      "enum": [
+        "match_start",
+        "state",
+        "opponent",
+        "bans",
+        "match_end"
+      ]
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ingested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "synthetic",
+            "manual_annotation",
+            "screen_recognition",
+            "legacy_manual",
+            "reviewed_rule"
+          ]
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "unknown"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "reference"
+      ]
+    },
+    "round": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "phase": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "unknown"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "context_confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "game_build": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "unknown"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rules_version": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "unknown"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "opponent_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "unknown"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "coverage": {
+      "enum": [
+        "full",
+        "partial"
+      ]
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "not": {
+              "const": "unknown"
+            }
+          },
+          "status": {
+            "enum": [
+              "observed",
+              "unknown",
+              "ambiguous"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean",
+                  "null"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            ],
+            "not": {
+              "const": "unknown"
+            }
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "confidence_kind": {
+            "const": "uncalibrated"
+          }
+        },
+        "required": [
+          "key",
+          "status",
+          "value",
+          "confidence"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "observed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "value": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_id",
+    "match_id",
+    "kind",
+    "observed_at",
+    "ingested_at",
+    "source"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "match_start",
+              "match_end"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "fields": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "bans"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "fields"
+        ],
+        "properties": {
+          "fields": {
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+              "properties": {
+                "key": {
+                  "const": "banned_tags"
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "status": {
+                        "const": "observed"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "value": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "not": {
+                            "const": "unknown"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}
