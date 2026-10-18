@@ -86,6 +86,16 @@ def generate_candidates(state, registry, *, now, policy=Policy()):
     return tuple(candidates)
 
 
+def _evidence_source_kinds(state):
+    """Check both history and caches; a rebuilt cache must not cross domains."""
+    kinds = {event.source.kind for event in state.events}
+    kinds.update(item.source.kind for item in state.fields)
+    kinds.update(item.source.kind for opponent in state.opponents for item in opponent.fields)
+    if state.ban_evidence is not None:
+        kinds.add(state.ban_evidence.source.kind)
+    return kinds
+
+
 def _global_reasons(state, registry, now, policy):
     reasons = []
     if state.lifecycle != "active" or state.match_id is None:
@@ -110,9 +120,13 @@ def _global_reasons(state, registry, now, policy):
         reasons.append("bans_unknown_or_uncertain")
     elif bans.last_seen > now or (bans.round is not None and state.round is not None and bans.round > state.round):
         reasons.append("ban_evidence_from_future_context")
-    if registry.domain == "test_rules_not_gameplay" and not policy.allow_test_rules:
-        reasons.append("test_rules_require_explicit_opt_in")
-    if registry.domain == "gameplay" and any(x.source.kind == "synthetic" for x in state.events):
+    source_kinds = _evidence_source_kinds(state)
+    if registry.domain == "test_rules_not_gameplay":
+        if not policy.allow_test_rules:
+            reasons.append("test_rules_require_explicit_opt_in")
+        if source_kinds - {"synthetic"}:
+            reasons.append("non_synthetic_evidence_not_test_rules")
+    if registry.domain == "gameplay" and "synthetic" in source_kinds:
         reasons.append("synthetic_evidence_not_gameplay")
     return reasons
 
