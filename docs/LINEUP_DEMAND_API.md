@@ -1,5 +1,9 @@
 # Demand-first lineup advice
 
+The [V41 state/economy adapter](STATE_ECONOMY_V41.md) connects current recognition
+and one guarded economic transaction to this API. Real recognition/UI gaps
+remain explicit; a submitted action is not a verified result.
+
 `Advisor.advise_lineup` chooses a supplied, supported target lineup before
 considering purchases. It buys unmet core targets or explicitly named temporary
 roles, never arbitrary affordable cards. An owned target in hand is considered
