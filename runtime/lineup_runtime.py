@@ -7,6 +7,7 @@ from runtime.economy_actions import prepare_action, values, verify_native_result
 from runtime.lineup_bridge import LineupBridge
 from runtime.lineup_transactions import prepare_owned, zone_ids
 from strategy.state_projection import project_frame
+from runtime.live_perception import state_readiness
 
 
 def attach_current_state(frame, facts, ocr, *, ui_reader, match_id, processed_at, phase,
@@ -22,6 +23,7 @@ def attach_current_state(frame, facts, ocr, *, ui_reader, match_id, processed_at
     result = deepcopy(frame)
     result.update(strategy_batch=projection['batch'], strategy_ui_bindings=projection['ui_bindings'],
                   strategy_projection=projection, source_mode=source_mode)
+    result['input_status']=state_readiness(result)
     return result
 
 
@@ -92,22 +94,23 @@ class LineupRuntime:
         if self.bridge.pending_transaction is not None or self.pending_ui is not None:
             return dict(status='pending_no_retry')
         try:
-            before = self._read(); own = values(before)
+            before = self._read(); own = values(before); input_status=state_readiness(before)
             advice = self.bridge.decide(before.get('strategy_batch'), decision_at=self.clock(),
                                         current_frame_sha256=before['sha256'],
                                         source_mode=before.get('source_mode', 'live_capture'))
             action = advice.get('action')
             if action not in ('buy', 'deploy', 'refresh', 'level_up'):
-                return dict(status='hold', advice=advice)
+                return dict(status='hold', advice=advice, input_status=input_status)
             seconds = own.get('preparation_seconds')
             if type(seconds) is not int or seconds < 8:
-                return dict(status='hold', advice=advice, reason='current_preparation_time_insufficient_or_unknown')
+                return dict(status='hold', advice=advice, input_status=input_status,
+                            reason='current_preparation_time_insufficient_or_unknown')
             if self.paused.is_set() or self.stopped.is_set(): return dict(status='paused_or_stopped')
             if action == 'deploy' and own.get('shop_visible') is True:
                 return self._close_for_deploy(before, advice)
             prepare = prepare_action if action in ('refresh', 'level_up') else prepare_owned
             intent = prepare(before, advice, now=self.clock())
-            if not intent['ready']: return dict(intent, status='hold', advice=advice)
+            if not intent['ready']: return dict(intent, status='hold', advice=advice, input_status=input_status)
             transaction_id = uuid.uuid4().hex
             self.bridge.submitted(transaction_id, advice, submitted_at=self.clock(), before_frame=before)
             # Use the exact immutable latch, including preparation/submission time.
@@ -116,7 +119,8 @@ class LineupRuntime:
             after = self._read()
             complete = self.bridge.complete_economy if action in ('refresh', 'level_up') else self.bridge.complete_owned
             result = complete(transaction_id, after, native, now=self.clock())
-            return dict(result, action=action, transaction_id=transaction_id, advice=advice)
+            return dict(result, action=action, transaction_id=transaction_id, advice=advice,
+                        input_status=state_readiness(after))
         except Exception as error:
             pending = self.bridge.pending_transaction is not None or self.pending_ui is not None
             return dict(status='submitted_outcome_uncertain_no_retry' if pending else 'hold',

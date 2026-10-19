@@ -19,6 +19,7 @@ def bound_record(frame, record):
         return None
     if (not frame.get('identity',{}).get('identity_version')
             or record.get('frame_sha256') != frame['sha256']
+            or record.get('captured_at',frame['captured_at']) != frame['captured_at']
             or record.get('identity_version') != frame.get('identity', {}).get('identity_version')
             or record.get('geometry_version') != frame.get('identity', {}).get('geometry_version')
             or record.get('status') != 'observed'
@@ -118,7 +119,7 @@ def project_frame(frame, facts, *, match_id, processed_at, phase,
     # not turn a missing current glyph into capacity five.
     capacity_score = frame.get('v14', {}).get('capacity', 0)
     capacity_record=bound_record(frame,frame.get('recognized_fields',{}).get('capacity'))
-    capacity=capacity_record.get('value') if capacity_record else (5 if capacity_score>=.97 else None)
+    capacity=capacity_record.get('value') if capacity_record else None
     put('capacity',capacity if type(capacity)is int and 0<=capacity<=32 else None,
         capacity_record['confidence'] if capacity_record else capacity_score)
     currency = None

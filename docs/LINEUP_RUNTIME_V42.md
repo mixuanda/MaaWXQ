@@ -1,5 +1,9 @@
 # V42 guarded lineup feedback loop
 
+The subsequent [V43 input adapter](LIVE_STRATEGY_INPUTS_V43.md) supplies the
+host-compatible recognition transport, observed Lingbao selection compiler and
+specific missing-input diagnostics. Real providers/data remain required.
+
 This version connects the existing Advisor to the actual Windows click and drag
 brokers. `runtime.lineup_runtime.LineupRuntime` selects, submits and independently
 verifies purchases, player upgrades, refreshes and deployment in one match loop.

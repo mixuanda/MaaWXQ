@@ -36,7 +36,7 @@ def frame(seconds=0, *, energy=20, level=5, names=None, roundno=3):
     f['recognized_zones']={'hand':dict(observed(f),coverage='full',overflow_checked=True,free_slots=2,
                     slots=[{'slot_id':'0','kind':'empty','classification_verified':True}])}
     f['recognized_bans']=observed(f,[])
-    f['recognized_fields']={'player_level':observed(f,level),'level_up_target_level':observed(f,5)}
+    f['recognized_fields']={'capacity':observed(f,5),'player_level':observed(f,level),'level_up_target_level':observed(f,5)}
     ui={key:observed(f,value) for key,value in [('player_level',level),('level_up_target_level',5),('refresh_cost',2),('level_up_cost',8)]}
     ui['actions']={action:dict(observed(f),label_verified=True,enabled_verified=True,rect=[20,20,80,40],target=[40,40])
                    for action in ('refresh','level_up')}
