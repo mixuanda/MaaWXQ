@@ -248,3 +248,19 @@ integration performed no live capture or input. Model-review wait time remains
 part of the recorded transaction latency. Private catalogs, templates, resident
 workers and larger trial budgets are excluded; public native guards and capture
 limits remain unchanged.
+
+## V17 shop/detail normalization gate
+
+[V17](../docs/SURFACE_V17.md) adds the input-free `runtime.surface_gate` decision
+order: current preparation, known owned detail, own-player/shop recognition,
+then fresh uncovered count/capacity/empty-cell checks. Covered population cannot
+block proposing a recognized shop close and cannot permit deployment. The
+shop-close verifier binds header pixels, distinct frames, release/capture times
+and clean native receipts, defaulting to saved replay. Numeric-round uncertainty
+is tolerated only for that close; gameplay validation remains strict.
+
+The actual bounded diagnostic closed the shop twice and reached 2/5 with bound
+model image review. Both pre-close counters were already readable; the older
+occlusion failure is replay evidence only. Talent handling remained blocked and
+the declared observation budget stopped the run. No new baseline or 5/5 result
+is claimed. Private runners/budgets are excluded, and integration sent no input.

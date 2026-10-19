@@ -1,5 +1,11 @@
 # V16: bounded name-mask repair and three failed baselines
 
+Later [V17](SURFACE_V17.md) verified two normal shop closes and a review-assisted
+deployment to 2/5. Its live pre-close counts were already readable; the older
+occluded-count failure was covered offline. It stopped at a talent overlay and
+its declared budget, without 5/5 or a new baseline. Pending statements below
+describe the V16 checkpoint; all three failed results remain retained.
+
 Three private custom-game baselines were registered before launch with frozen
 policy/source hashes and an explicit `preregistered_model_review_assisted_baseline`
 classification. All three sixth-place results are retained, including the
