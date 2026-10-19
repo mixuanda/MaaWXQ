@@ -1,5 +1,9 @@
 # V41: current-state projection and one advised economy transaction
 
+The subsequent [V42 runtime](LINEUP_RUNTIME_V42.md) connects the actual guarded
+ports, adds independent physical buy/deploy completion, and supplies the single
+match feedback loop. The real UI/data limitations below remain explicit.
+
 The lineup Advisor now has a portable state/transaction adapter. It projects
 confirmed current recognition into the existing state store, recomputes lineup
 demand before dispatch, and records refresh/level-up success only from a fresh

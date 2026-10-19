@@ -229,8 +229,10 @@ def advise_lineup(state, plans, *, now, spending, upgrades=(), opponent_id=None,
                 rejected.append({'lineup_id': plan.lineup_id, 'reasons': ['ban_to_target_mapping_unknown']}); continue
             source(mapping)
         blocked = [t.hero_id for t in plan.targets if t.role == 'core' and set(t.ban_tags) & set(state.confirmed_bans)]
-        if blocked or sum(t.count for t in plan.targets if t.role == 'core') > capacity:
-            rejected.append({'lineup_id': plan.lineup_id, 'reasons': ['core_banned' if blocked else 'target_exceeds_capacity'], 'heroes': blocked}); continue
+        # A future lineup may exceed today's capacity. Actual deployment below
+        # still requires a current empty place; do not reject the leveling goal.
+        if blocked or sum(t.count for t in plan.targets if t.role == 'core') > 32:
+            rejected.append({'lineup_id': plan.lineup_id, 'reasons': ['core_banned' if blocked else 'target_exceeds_supported_board'], 'heroes': blocked}); continue
         if plan.chess_player_id is not None and get('selected_chess_player_id') != plan.chess_player_id:
             rejected.append({'lineup_id': plan.lineup_id, 'reasons': ['requested_chess_player_not_observed']}); continue
         bonuses = Counter(); matched = []; uncertain = []
@@ -318,12 +320,15 @@ def advise_lineup(state, plans, *, now, spending, upgrades=(), opponent_id=None,
     common['shop_probability_evidence'] = {'observed_quality_percent': odds, 'individual_hero_probability': None,
                                            'future_level_probability': None}
     # Fill owned target cards first; never deploy an arbitrary filler.
+    owned_deployment = None
     for role in ('core',):
         eligible = [uid for uid in hand for target in selected.targets if target.role == role
                     and target.hero_id == heroes[uid] and deployed[target.hero_id] < target.count
                     and not set(target.ban_tags) & set(state.confirmed_bans)]
         if eligible and len(board) < capacity:
-            return output('deploy', ['owned_core_fills_selected_lineup'], unit_id=eligible[0], hero_id=heroes[eligible[0]], **common)
+            owned_deployment = eligible[0]
+            if get('shop_visible') is not True:
+                return output('deploy', ['owned_core_fills_selected_lineup'], unit_id=eligible[0], hero_id=heroes[eligible[0]], **common)
     needed = []; rejected_offers = []
     for uid in offers:
         matching = [(target, count, kind, star) for (hero, star), (target, count, kind) in demands.items()
@@ -344,6 +349,11 @@ def advise_lineup(state, plans, *, now, spending, upgrades=(), opponent_id=None,
         if (type(credits) is int and type(price) is int and price >= 0 and isinstance(currency, str)
                 and offer['currency_id'] == currency and credits-price >= protected and type(free_hand) is int and free_hand > 0):
             return output('buy', ['needed_target_affordable_with_declared_reserve'], offer=offer, remaining_credits=credits-price, **common)
+    # Buy the remaining visible demands while this shop is already open, then
+    # close once to deploy. Every purchase still requires a new observation.
+    if owned_deployment is not None:
+        return output('deploy', ['owned_core_fills_selected_lineup'], unit_id=owned_deployment,
+                      hero_id=heroes[owned_deployment], **common)
     # A named transition is permitted only while its declared core replacement is missing.
     if len(board) < capacity:
         for uid in hand:
@@ -353,18 +363,15 @@ def advise_lineup(state, plans, *, now, spending, upgrades=(), opponent_id=None,
                     and any(owned[t.hero_id] < t.count for t in selected.targets if t.hero_id in target.replaces)):
                 return output('deploy', ['explicit_transition_fills_temporary_role'], unit_id=uid, hero_id=target.hero_id,
                               replaces=list(target.replaces), **common)
-    if needed:
-        return output(reasons=['needed_offer_visible_hold_for_cost_space_or_reserve'], **common)
     if not demands:
         return output(reasons=['selected_lineup_has_no_supported_unmet_need'], **common)
-    if any(heroes[uid] is None for uid in offers):
-        return output(reasons=['unresolved_shop_card_might_be_needed_no_blind_refresh'], **common)
     level = get('player_level')
     minimum = selected.search_min_level
     common['level_policy'] = {'player_level': level, 'search_min_level': minimum, 'source_reference': selected.source.reference,
                               'interpretation': 'declared_search_preference_not_shop_probability_or_unit_star'}
     if minimum is None or type(level) is not int:
-        return output(reasons=['search_level_preference_or_current_level_unknown'], **common)
+        return output(reasons=['needed_offer_visible_hold_for_cost_space_or_reserve' if needed
+                               else 'search_level_preference_or_current_level_unknown'], **common)
     if level < minimum:
         quote = get('level_up_cost'); target_level = get('level_up_target_level')
         if (type(quote) is int and quote >= 0 and type(target_level) is int and level < target_level <= minimum
@@ -373,6 +380,10 @@ def advise_lineup(state, plans, *, now, spending, upgrades=(), opponent_id=None,
             return output('level_up', ['below_declared_search_level_use_observed_upgrade_quote'],
                           level_up_cost=quote, target_player_level=target_level, remaining_credits=credits-quote, **common)
         return output(reasons=['below_search_level_protect_leveling_funds_or_observe_quote'], **common)
+    if needed:
+        return output(reasons=['needed_offer_visible_hold_for_cost_space_or_reserve'], **common)
+    if any(heroes[uid] is None for uid in offers):
+        return output(reasons=['unresolved_shop_card_might_be_needed_no_blind_refresh'], **common)
     refresh_cost = get('refresh_cost')
     if (type(credits) is not int or type(refresh_cost) is not int or refresh_cost < 0
             or not isinstance(currency, str) or get('refresh_currency_id') != currency):

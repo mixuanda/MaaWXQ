@@ -196,6 +196,11 @@ class LineupBridge:
             intent = prepare_action(before_frame, advice, now=submitted_at)
             if not intent['ready']:
                 raise ValueError('economy_transaction_not_prepared:' + ','.join(intent['reasons']))
+        else:
+            from .lineup_transactions import prepare_owned
+            intent = prepare_owned(before_frame, advice, now=submitted_at)
+            if not intent['ready']:
+                raise ValueError('owned_transaction_not_prepared:' + ','.join(intent['reasons']))
         self.pending_transaction = dict(id=transaction_id, advice=deepcopy(advice), submitted_at=submitted_at)
         self.pending_transaction['intent'] = intent
         if intent is not None:
@@ -227,6 +232,20 @@ class LineupBridge:
         self.pending_transaction = None
         self.awaiting_after = timestamp(observed_at)
         return dict(result, status='recorded', refresh_spent=self.refresh_spent, refresh_count=self.refresh_count)
+
+    def complete_owned(self, transaction_id, after_frame, native_result, *, now):
+        from .lineup_transactions import verify_owned
+        pending = self.pending_transaction
+        if (pending is None or pending['id'] != transaction_id or pending.get('intent') is None
+                or pending['advice']['action'] not in ('buy', 'deploy')):
+            raise ValueError('prepared_owned_transaction_not_pending')
+        result = verify_owned(pending['intent'], after_frame, native_result=native_result, now=now)
+        if not result['verified']:
+            return dict(result, status='submitted_outcome_uncertain_no_retry')
+        self.receipts[transaction_id] = dict(pending, receipt=deepcopy(result['receipt']), observed_at=after_frame['captured_at'])
+        self.pending_transaction = None
+        self.awaiting_after = timestamp(after_frame['captured_at'])
+        return dict(result, status='recorded')
 
 
 def select_purchase(advice, offers):

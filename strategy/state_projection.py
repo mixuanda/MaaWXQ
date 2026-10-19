@@ -68,7 +68,8 @@ def recognized_zone(frame, name):
             bounds=slot.get('bounds')
             if (isinstance(bounds,list)and len(bounds)==4 and all(type(v)is int for v in bounds)
                     and 0<=bounds[0]<bounds[0]+bounds[2]<=1450 and 0<=bounds[1]<bounds[1]+bounds[3]<=869):
-                bindings[uid] = dict(template_id=slot['template_id'], hero_id=slot['hero_id'],slot_id=sid,
+                bindings[uid] = dict(status='observed', confidence=zone['confidence'],
+                    template_id=slot['template_id'], hero_id=slot['hero_id'],slot_id=sid,
                     bounds=list(bounds),frame_sha256=frame['sha256'],identity_version=frame['identity']['identity_version'],
                     geometry_version=frame['identity']['geometry_version'])
     return ids, values, bindings, None
@@ -99,7 +100,7 @@ def project_frame(frame, facts, *, match_id, processed_at, phase,
             frame_sha256=frame['sha256'],identity_version=frame['identity']['identity_version'],
             geometry_version=frame['identity']['geometry_version'],
             coverage='full',overflow_checked=True,slots=[],source='positive_current_owned_zero_population_glyph')
-    ui = ui or {}; own = {}; gaps = []; bindings = {'hand': {}, 'actions': {}}
+    ui = ui or {}; own = {}; gaps = []; bindings = {'hand': {}, 'offers': {}, 'actions': {}}
     if not facts_bound: gaps.append('current_facts_frame_binding_unknown')
     def put(key, value=None, confidence=None):
         own[key] = field(key, value, confidence)
@@ -132,7 +133,11 @@ def project_frame(frame, facts, *, match_id, processed_at, phase,
     shop = facts.get('shop_visible') is True
     offers = facts.get('offers', []) if shop else []
     complete_slots = len(offers) == 4 and {x.get('slot') for x in offers} == set(range(4))
-    put('offer_ids', ['shop:'+str(i) for i in range(4)] if shop and complete_slots else None, .97)
+    hidden = facts.get('shop_hidden_verified') is True and not shop
+    put('shop_visible', True if shop else False if hidden else None, .97)
+    timer = facts.get('timer')
+    put('preparation_seconds', timer if type(timer) is int and 0 <= timer <= 999 else None, .97)
+    put('offer_ids', ['shop:'+str(i) for i in range(4)] if shop and complete_slots else [] if hidden else None, .97)
     if shop and complete_slots:
         for offer in offers:
             uid = 'shop:'+str(offer['slot'])
@@ -140,12 +145,17 @@ def project_frame(frame, facts, *, match_id, processed_at, phase,
             price = offer.get('price')
             put('price:'+uid, price if type(price) is int and price >= 0 else None, .97)
             put('currency:'+uid, currency, .97)
+            binding = bound_record(frame, offer.get('ui_binding'))
+            if binding and binding.get('hero_id') == offer.get('name'):
+                bindings['offers'][uid] = deepcopy(binding)
             for key in ('star', 'quality_tier', 'unit_level'):
                 item = offer.get(key)
                 if (isinstance(item, dict) and item.get('status')=='observed' and item.get('semantic_source')
                         and type(item.get('value'))is int and 0<=item['value']<=999):
                     put(key+':'+uid, item.get('value'), .97)
-    else: gaps.append('current_shop_coverage_unknown')
+    elif not hidden: gaps.append('current_shop_coverage_unknown')
+    destination = bound_record(frame, frame.get('recognized_deployment'))
+    if destination: bindings['deployment'] = deepcopy(destination)
     for key in ('player_level', 'level_up_cost', 'level_up_target_level', 'refresh_cost'):
         record = bound_record(frame, ui.get(key)) or bound_record(frame,frame.get('recognized_fields',{}).get(key))
         value = record.get('value') if record else None

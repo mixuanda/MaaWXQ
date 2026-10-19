@@ -84,10 +84,11 @@ def prepare_action(frame, advice, *, now):
             'reasons': [], 'execution_allowed': False}
 
 
-def verify_action(intent, frame, *, native_result, now):
-    reasons = []; receipt = {}; result = _object(native_result)
+def verify_native_result(intent, frame, *, native_result, now, drag=False):
+    """Shared raw submission/release and current-context check; no sent-only proof."""
+    reasons = []; result = _object(native_result)
     try:
-        own = values(frame); context = frame['strategy_batch']['context']; before = intent['before']
+        values(frame); context = frame['strategy_batch']['context']
         started = stamp(result['started_at']); released = stamp(result['released_at'])
         captured = stamp(frame['captured_at']); clock = stamp(now)
         submission = _object(result.get('submission')); native = _object(result.get('native_summary'))
@@ -97,8 +98,15 @@ def verify_action(intent, frame, *, native_result, now):
                 or type(native.get('owned_up_count')) is not int or native['owned_up_count'] != 1
                 or submission.get('sent') is not True or submission.get('owned_release_confirmed') is not True
                 or submission.get('cleanup_errors') != [] or type(submission.get('action_budget_remaining')) is not int
-                or submission['action_budget_remaining'] != 0 or submission.get('submission_outcome') != 'down_and_owned_up_submitted'):
+                or submission['action_budget_remaining'] != 0 or submission.get('submission_outcome') !=
+                   ('drag_path_submitted_requires_visual_verification' if drag else 'down_and_owned_up_submitted')):
             reasons.append('clean_owned_native_release_unproven')
+        if drag:
+            moves = result.get('drag_moves')
+            if (not isinstance(moves, list) or len(moves) != 10
+                    or any(not isinstance(row, dict) or row.get('step') != i+1 or type(row.get('raw_return')) is not int
+                           or row['raw_return'] != 1 for i, row in enumerate(moves))):
+                reasons.append('complete_owned_drag_path_unproven')
         if (not stamp(intent['before_time']) <= stamp(intent['prepared_at']) <= stamp(intent.get('submitted_at', intent['prepared_at'])) <= started
                 or not started < released < captured <= clock or started >= stamp(intent['expires_at'])
                 or not 0 <= (started-stamp(intent['before_time'])).total_seconds() <= 5
@@ -111,6 +119,15 @@ def verify_action(intent, frame, *, native_result, now):
                 or context.get('match_id') != intent['match_id'] or context.get('round') != intent['round']
                 or context.get('phase') != 'preparation'):
             reasons.append('same_game_geometry_round_and_preparation_required')
+    except (KeyError, ValueError, TypeError, AttributeError):
+        reasons.append('invalid_native_postcondition')
+    return reasons
+
+
+def verify_action(intent, frame, *, native_result, now):
+    reasons = verify_native_result(intent, frame, native_result=native_result, now=now); receipt = {}
+    try:
+        own = values(frame); before = intent['before']
         balance = own.get('credits')
         resource_ok = (type(balance) is int and own.get('currency_id') == before['currency_id']
                        and before['credits']-balance == intent['quote'])
@@ -155,7 +172,7 @@ class EconomyActionHandler:
         transaction_id = uuid.uuid4().hex
         self.bridge.submitted(transaction_id, advice, submitted_at=clock(), before_frame=before)
         try:
-            native_result = dispatch(deepcopy(before), deepcopy(intent))
+            native_result = dispatch(deepcopy(before), deepcopy(self.bridge.pending_transaction['intent']))
             after = observe()
             return self.bridge.complete_economy(transaction_id, after, native_result, now=clock())
         except Exception as error:
