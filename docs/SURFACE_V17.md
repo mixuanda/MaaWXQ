@@ -1,5 +1,10 @@
 # V17: shop normalization verified, five-unit strategy still blocked
 
+Later evidence and stricter input-free guards are recorded in
+[V27](AUTO_CHAIN_V27.md): bounded talent-detail recovery, three later automatic
+deployment records, and a refused room transaction. Five of five remains
+unverified; the historical V17 limitations below are preserved.
+
 In one preregistered bounded diagnostic, the sole control worker normally closed
 the shop once in round 4 and again in round 5. Each close retained the same
 current round-title pixels and preparation controls, then recaptured and checked

@@ -264,3 +264,28 @@ model image review. Both pre-close counters were already readable; the older
 occlusion failure is replay evidence only. Talent handling remained blocked and
 the declared observation budget stopped the run. No new baseline or 5/5 result
 is claimed. Private runners/budgets are excluded, and integration sent no input.
+
+## V27 talent recovery, slot identities and cumulative budgets
+
+[V27](../docs/AUTO_CHAIN_V27.md) records Twin Tour detail/animation recovery and
+three later automatic deployment postconditions (3.92-4.44 seconds, zero model
+postcondition reviews). The last debug game reached 4/5 and ended sixth; 5/5 and
+a new complete baseline remain unverified. The unified V27 runner stopped in a
+room containing another account before its first-bot transaction sent input.
+The prior three review-assisted sixth-place baseline results are preserved.
+
+`runtime.talent_chain` checks complete talent layout families, current bound
+name/effect detail candidates, at most three stability observations and a clean
+detail-close return under the original deadline. `runtime.slot_identity` binds
+hero/image/ROI templates to complete competing comparisons for distinct current
+hand slots. The stricter slot contract has offline tests, not a new live match.
+`runtime.chain_guards` rechecks both fresh empty-room scenes and retains
+cumulative capture/byte/attempt usage across digest-bound budget restoration.
+Callers must persist charged attempts before dispatch and retain the latest
+checkpoint digest; this helper supplies no durable ledger or input executor.
+
+All helpers are input-free. Replay cannot become a new live result; a selected
+detail does not prove talent rewards, and no helper grants input or retry
+permission. Existing native guards, stop-on-full/no-deletion capture limits and
+the original room refusal remain unchanged. Private runners, catalogs, images
+and larger diagnostic budgets are excluded.
