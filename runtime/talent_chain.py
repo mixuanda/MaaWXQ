@@ -107,7 +107,8 @@ def verify_detail_return(detail, after, close_step, *, expected_count, deadline_
     ev = state['evidence']; native = step.get('native_summary', {}); submission = step.get('submission', {})
     if (not isinstance(detail, dict) or detail.get('detail_matched') is not True
             or step.get('before') != detail.get('frame_sha256')
-            or step.get('operation') not in ('dismiss_verified_selected_talent_detail', 'dismiss_recovered_verified_talent')):
+            or step.get('operation') not in ('dismiss_verified_selected_talent_detail', 'dismiss_recovered_verified_talent',
+                                            'dismiss_local_verified_talent_detail')):
         reasons.append('exact_detail_close_binding_required')
     if (not isinstance(detail, dict) or detail.get('source_mode') != source_mode
             or (isinstance(after, dict) and (after.get('source_mode', source_mode) != source_mode

@@ -86,5 +86,12 @@ class TalentChainTests(unittest.TestCase):
         result = verify_detail_return(detail, after, step, expected_count=4, deadline_at='2026-01-01T00:01:00Z', now='2026-01-01T00:00:21Z')
         self.assertIn('talent_close_release_unproven', result['reasons'])
 
+    def test_local_ocr_close_uses_the_same_bound_release_and_return_contract(self):
+        detail, after, step = self.recovery(); step['operation'] = 'dismiss_local_verified_talent_detail'
+        args = dict(expected_count=4, deadline_at='2026-01-01T00:01:00Z', now='2026-01-01T00:00:21Z')
+        self.assertTrue(verify_detail_return(detail, after, step, **args)['evidence_verified'])
+        step['before'] = 'f' * 64
+        self.assertFalse(verify_detail_return(detail, after, step, **args)['evidence_verified'])
+
 
 if __name__ == '__main__': unittest.main()

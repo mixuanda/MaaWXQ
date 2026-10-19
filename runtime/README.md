@@ -313,3 +313,24 @@ unit identity. All 253 offline tests and nine saved layout cases pass; public
 native dependencies and 50-PNG/64-MiB stop-on-full/no-deletion limits remain
 unchanged. Private controllers, images, learned catalogs and expanded diagnostic
 budgets are excluded.
+
+## V40 local OCR baseline rules and persistent information identity
+
+[V40](../docs/LOCAL_BASELINE_V40.md) records local gameplay to sixth-place
+settlement: four units, one Twin Tour talent, no runtime model/fact calls and
+no gameplay input stops. All four V37-V40 results remain 6 / unknown / 6 / 6.
+Their selection observers all exhausted the capture budget with zero selection
+actions. The actual observed Yi Xing player and a successful gameplay exit code
+do not establish automatic selection or end-to-end acceptance.
+
+`runtime.local_facts` exposes exact canonical hand-label candidates, two-frame
+name agreement, fixed lexical talent ordering, ordered-numeral text comparison,
+rank parsing and a three-unreadable-read stop latch. Supplied text cannot replace
+current frame/ROI, hero, ownership or slot verification. No hidden strength score,
+model client or input executor is added.
+
+`bind_persistent_information` first requires exact centered derived-card title
+identity, then uses the same source frame's internal card name and description
+for fresh .97 comparisons. V40 did not trigger the information book; its fix
+remains saved-frame coverage. The private launcher, assets and larger capture
+budgets are excluded. Native input and public retention limits are unchanged.

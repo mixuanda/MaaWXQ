@@ -2,12 +2,34 @@
 from runtime.transition_verification import _frame, _ocr_text, _object, _score, _sha, compact
 from strategy.codec import timestamp
 
+CENTER_TITLE_RECT = [500, 45, 450, 50]
+CENTER_DESCRIPTION_RECT = [613, 467, 225, 75]
+CENTER_PERSISTENT_NAME_RECT = [610, 400, 230, 52]
+
 
 def _rect(value):
     return (isinstance(value, list) and len(value) == 4 and all(type(v) is int for v in value)
             and 0 <= value[0] < value[0] + value[2] <= 1450
             and 0 <= value[1] < value[1] + value[3] <= 869
-            and 10 <= value[2] <= 400 and 10 <= value[3] <= 200)
+            and (10 <= value[2] <= 400 or value == CENTER_TITLE_RECT) and 10 <= value[3] <= 200)
+
+
+def bind_persistent_information(identity):
+    """After exact full-title OCR, bind the same frame's durable card regions.
+
+    Only the reviewed centered derived-card layout is supported. The transient
+    title may disappear; the internal card name AND effect must still match a
+    fresh frame. The original bitmap/ROI producer remains independently checked.
+    """
+    old = _object(identity)
+    if (old.get('information_matched') is not True or not _sha(old.get('frame_sha256'))
+            or old.get('name_rect') != CENTER_TITLE_RECT or old.get('description_rect') != CENTER_DESCRIPTION_RECT
+            or not isinstance(old.get('name'), str) or not old['name'].endswith('衍生卡')):
+        raise ValueError('exact_centered_derived_card_identity_required')
+    return dict(old, name_rect=list(CENTER_PERSISTENT_NAME_RECT), description_rect=list(CENTER_DESCRIPTION_RECT),
+                ocr_identity_regions={'name': list(CENTER_TITLE_RECT), 'description': list(CENTER_DESCRIPTION_RECT)},
+                persistent_identity_regions={'name': list(CENTER_PERSISTENT_NAME_RECT), 'description': list(CENTER_DESCRIPTION_RECT)},
+                execution_allowed=False, selection_commit_verified=False, rewards_verified=False)
 
 
 def assess_information(frame, ocr, *, expected_name, effect_fragment, name_rect, description_rect,

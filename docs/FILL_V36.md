@@ -1,5 +1,10 @@
 # V36: continuous five-unit fill with bounded model fact assistance
 
+Later [V40](LOCAL_BASELINE_V40.md) records a local gameplay run reaching
+sixth-place settlement without runtime model/fact calls. Automatic chess-player
+selection still failed its observer budget, and strategy quality is unaccepted.
+The assisted V36 five-unit result below remains a separate historical milestone.
+
 One bot-only custom diagnostic reached round 5 with a current 5/5 population.
 Li Yuanfang was the initial verified deployment, followed by Niumo, Sun
 Shangxiang, Mi Yue and Jing. The same controller continued across preparation
