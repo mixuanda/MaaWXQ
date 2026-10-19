@@ -226,3 +226,25 @@ The prior V12 match also later ended sixth. Both debug outcomes are excluded
 from win-rate samples. Five-unit play, autonomous army development and a full
 match strategy remain unfinished. Integration used only offline checks and did
 not touch the game or control workspace; public capture limits are unchanged.
+
+## V16 bounded white-name matching and failed baselines
+
+[V16](../docs/BASELINES_V16.md) retains all three preregistered review-assisted
+baseline results: sixth place with maximum confirmed populations 0/5, 2/5 and
+2/5. These are baseline-report samples, not autonomous win-rate samples.
+The prior V13 debug result is not reclassified. Full strategy and 5/5 remain
+unfinished.
+
+`runtime/name_mask.cs` repairs the observed selected-unit name alignment with
+bounded white-pixel masks at the unchanged .97 threshold. `runtime.name_mask`
+checks full component metadata and retains the .97/.02 population-template
+gates. All outputs remain read-only candidates, without name OCR, ownership
+verification or input permission. The new live frame passed the mask comparison;
+the later shop-obscured population/capacity frame remained rejected, so no
+Su Lie drag was submitted. Shop dismissal and recapture are not implemented.
+
+The C# matcher was recompiled and checked against synthetic and saved bitmaps;
+integration performed no live capture or input. Model-review wait time remains
+part of the recorded transaction latency. Private catalogs, templates, resident
+workers and larger trial budgets are excluded; public native guards and capture
+limits remain unchanged.

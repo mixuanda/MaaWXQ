@@ -1,5 +1,10 @@
 # V13: four units observed, automatic army strategy unfinished
 
+Later [V16 baseline evidence](BASELINES_V16.md) retains three preregistered
+review-assisted runs, all sixth, with maximum populations 0/5, 2/5 and 2/5.
+The V13 four-unit debug result below is preserved as a separate experiment;
+it is not a demonstrated repeatable full strategy.
+
 In a fresh authorized Yi Xing custom game with five Xingyao bots and no other
 humans, the control worker automatically purchased and verified the first
 deployment, Su Lie. It later dragged Kuang Tie, Da Qiao and Jiang Ziya from the
