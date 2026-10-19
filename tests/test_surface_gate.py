@@ -55,6 +55,26 @@ class SurfaceGateTests(unittest.TestCase):
         after['v14']['counts'][1]['score'] = .99
         self.assertEqual(inspect_surface(after, 1, 2)['action'], 'stop')
 
+    def test_five_of_five_stops_expansion_instead_of_offering_an_extra_cell(self):
+        _, frame = self.frames(); frame['v14']['counts'] = [{'value': 5, 'score': 1}, {'value': 4, 'score': .8}]
+        result = inspect_surface(frame, 5, None)
+        self.assertEqual(result['action'], 'full_queue_observed'); self.assertFalse(result['execution_allowed'])
+        for cell in (1, 5):
+            self.assertEqual(inspect_surface(frame, 5, cell)['action'], 'stop')
+        frame['v14']['counts'][1]['score'] = .99
+        self.assertEqual(inspect_surface(frame, 5, None)['action'], 'stop')
+
+    def test_five_still_requires_uncovered_own_preparation_and_capacity(self):
+        before, _ = self.frames(); before['v14']['counts'] = [{'value': 5, 'score': 1}]
+        self.assertEqual(inspect_surface(before, 5, None)['action'], 'dismiss_shop')
+        for i in range(4): fixtures.set_score(before, 'price_' + str(i), 0)
+        before['v14']['capacity'] = .969
+        self.assertEqual(inspect_surface(before, 5, None)['action'], 'stop')
+        before['v14']['capacity'] = 1; fixtures.set_score(before, 'phase_ready', .2)
+        self.assertEqual(inspect_surface(before, 5, None)['action'], 'wait')
+        fixtures.set_score(before, 'phase_ready', 1); fixtures.set_score(before, 'own_portrait', .98)
+        self.assertEqual(inspect_surface(before, 5, None)['action'], 'wait')
+
     def test_malformed_anchors_and_owner_state_do_not_fall_back_to_clicks(self):
         before, _ = self.frames()
         for value in (float('nan'), True, 1.1):

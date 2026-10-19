@@ -289,3 +289,27 @@ detail does not prove talent rewards, and no helper grants input or retry
 permission. Existing native guards, stop-on-full/no-deletion capture limits and
 the original room refusal remain unchanged. Private runners, catalogs, images
 and larger diagnostic budgets are excluded.
+
+## V36 continuous five-unit fill with model fact assistance
+
+[V36](../docs/FILL_V36.md) records one continuous bot-only custom diagnostic
+reaching round 5 at 5/5. Four automatic expansion transactions took 4.13-4.87
+seconds and used zero model deployment-postcondition reviews. Three model fact
+reviews still helped identify new cards or an empty hero hand. The controller
+stopped at full population; fully autonomous strategy, the merged full talent
+flow and a complete match remain unverified. No new complete baseline was added.
+
+`inspect_surface(frame, 5, None)` reports `full_queue_observed`, never an extra
+deployment opportunity. The .97/.02 population checks extend through five.
+Talent layouts accept another complete reviewed appearance family at .97,
+without mixing partial families. `runtime.talent_information` binds the actual
+preview rectangles and both fresh unchanged-content comparisons; preview effect
+text and selected-summary text are checked separately. These pure helpers grant
+no input, retry, selection, reward or complete-strategy permission.
+
+The exact already-selected Star difficulty case is covered by a zero-input
+broker regression. Private appearance references cannot stand in for current
+unit identity. All 253 offline tests and nine saved layout cases pass; public
+native dependencies and 50-PNG/64-MiB stop-on-full/no-deletion limits remain
+unchanged. Private controllers, images, learned catalogs and expanded diagnostic
+budgets are excluded.

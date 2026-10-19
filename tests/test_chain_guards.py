@@ -42,9 +42,29 @@ class ChainGuardTests(unittest.TestCase):
         self.assertFalse(empty_room_pair(before, current, now='2026-01-01T00:00:03Z')['empty_room_evidence_verified'])
 
     def test_existing_lobby_runner_never_constructs_native_broker_after_guest_joins(self):
-        from runtime import lobby_setup
         before = self.room(); joined = self.room('b', '2026-01-01T00:00:02Z')
         next(row for row in joined['matches'] if row['name'] == 'empty_1')['score'] = .012
+        result = self.run_lobby_without_native(before, joined, 'custom_lobby_bot_menu')
+        self.assertFalse(result['input_attempted']); self.assertEqual(result['error'], 'empty_custom_lobby_not_verified')
+
+    def test_already_selected_difficulty_is_an_exact_noop_without_a_native_broker(self):
+        ranks = ['newbie', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'xingyao', 'wangzhe']
+        names = ['room_options_title', 'difficulty_label', 'room_options_close'] + ['difficulty_' + name for name in ranks]
+        before = self.room(); before.update(layout='room_options',
+            matches=[{'name': name, 'score': 1, 'center': [3, 4]} for name in names],
+            settings_choices=[{'name': name, 'selected': name == 'xingyao', 'center': [3, 4]} for name in ranks])
+        current = deepcopy(before); current.update(sha256='b' * 64, captured_at='2026-01-01T00:00:02Z')
+        result = self.run_lobby_without_native(before, current, 'room_options')
+        self.assertFalse(result['input_attempted']); self.assertFalse(result['configuration_verified'])
+        self.assertEqual(result['status'], 'stopped'); self.assertEqual(result['error'], 'xingyao_already_selected')
+        self.assertEqual(result['state']['scene'], 'room_options')
+        self.assertEqual(result['state']['selected_bot_difficulty'], 'xingyao')
+        # A caller can recognize this exact no-op; it must not treat every stop
+        # as a successful setting change or as proof of a human-free room.
+        self.assertFalse(result['state']['other_humans_verified_absent'])
+
+    def run_lobby_without_native(self, before, current, layout):
+        from runtime import lobby_setup
         row = {'hwnd': 1, 'pid': 2, 'title': 'fixture-game', 'class_name': 'UnityWndClass',
                'executable_path': r'C:\Synthetic\WXQ.exe', 'process_security': {'integrity_rid': 8192}}
         security = {'known': True, 'app_container': False, 'ui_access': False, 'elevated': False, 'integrity_rid': 8192}
@@ -53,10 +73,10 @@ class ChainGuardTests(unittest.TestCase):
             profile = root / 'profile.json'; profile.write_text(json.dumps({key: row[key] for key in ('title', 'class_name', 'executable_path')}))
             with patch.object(lobby_setup, 'process_security', return_value=security), patch.object(lobby_setup, 'find_windows', return_value=[row]), \
                  patch.object(lobby_setup, 'inspect_game', return_value=row), patch.object(lobby_setup, 'ensure_capture_capacity', return_value={}), \
-                 patch.object(lobby_setup, 'capture', side_effect=[before, joined]), patch.object(lobby_setup, 'GameClickBroker') as broker:
-                result = lobby_setup.run(root / 'run', reference, hashlib.sha256(reference.read_bytes()).hexdigest(), profile, True, False, 'custom_lobby_bot_menu')
-            self.assertFalse(result['input_attempted']); self.assertEqual(result['error'], 'empty_custom_lobby_not_verified')
+                 patch.object(lobby_setup, 'capture', side_effect=[before, current]), patch.object(lobby_setup, 'GameClickBroker') as broker:
+                result = lobby_setup.run(root / 'run', reference, hashlib.sha256(reference.read_bytes()).hexdigest(), profile, True, False, layout)
             broker.assert_not_called()
+        return result
 
     def budget(self):
         return ChainBudget('fixture-scope', '2026-01-01T00:00:00Z', '2026-01-01T00:05:00Z', max_captures=3, max_bytes=1000, max_native_attempts=2)

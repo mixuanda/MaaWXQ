@@ -1,5 +1,10 @@
 # V27: bounded talent recovery and automatic deployment evidence
 
+Later [V36](FILL_V36.md) evidence reaches 5/5 in one continuous controller run
+with three bounded model fact reviews. It does not establish fully autonomous
+strategy or a complete talent/match flow. The historical V27 results below are
+preserved.
+
 The last in-match diagnostic reached round 8 with four of five units and ended
 sixth. After Ganjiang Moye, three later deployments recorded automatic fresh
 postconditions: Niumo in round 2, Yi Xing in round 3 and Kuang Tie in round 5.

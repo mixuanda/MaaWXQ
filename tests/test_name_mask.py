@@ -61,6 +61,14 @@ class NameMaskTests(unittest.TestCase):
         self.assertFalse(population_template_gate(rows, expected_count=2, capacity_score=1))
         self.assertFalse(population_template_gate(rows, expected_count=2, capacity_score=.96))
 
+    def test_fifth_population_preserves_thresholds_and_sixth_stays_out_of_scope(self):
+        rows = [{'value': 5, 'score': 1}, {'value': 4, 'score': .8}]
+        self.assertTrue(population_template_gate(rows, expected_count=5, capacity_score=1))
+        for count in (6, True, -1):
+            self.assertFalse(population_template_gate(rows, expected_count=count, capacity_score=1))
+        rows[1]['score'] = .99
+        self.assertFalse(population_template_gate(rows, expected_count=5, capacity_score=1))
+
     def test_shop_occlusion_is_not_waived_by_a_successful_name_or_hand_match(self):
         self.assertTrue(is_name_match(dict(self.measurement(), Score=1)))
         rows = [{'value': 2, 'score': .8924205378973105}]

@@ -31,6 +31,16 @@ class TalentChainTests(unittest.TestCase):
         frame['v14']['anchors'] = [{'id': 'x', 'score': 1}, {'id': 'x', 'score': 1}]
         self.assertEqual(talent_layout(frame)['kind'], 'unknown')
 
+    def test_reviewed_silver_appearance_is_a_whole_family_at_the_same_threshold(self):
+        frame, _, _ = self.detail()
+        frame['v14']['anchors'] = [{'id': 'reviewed_talent_footer_' + str(i), 'score': .97} for i in range(3)]
+        self.assertIn('reviewed', talent_layout(frame)['families'])
+        frame['v14']['anchors'][0]['score'] = .969
+        frame['v14']['anchors'].append({'id': 'current_talent_footer_0', 'score': 1})
+        self.assertEqual(talent_layout(frame)['kind'], 'unknown')
+        frame['v14']['anchors'] = frame['v14']['anchors'][1:]
+        self.assertEqual(talent_layout(frame)['kind'], 'unknown')
+
     def test_animation_waits_and_exact_bound_name_effect_is_only_a_detail_candidate(self):
         _, _, unstable = self.detail(name=''); _, _, stable = self.detail('b', '2026-01-01T00:00:01Z')
         self.assertFalse(unstable['detail_matched']); self.assertTrue(stable['detail_matched'])

@@ -42,7 +42,8 @@ def inspect_surface(frame, expected_count, target_cell):
     def result(action, reason):
         return {'action': action, 'reason': reason, 'evidence': evidence,
                 'execution_allowed': False, 'blind_retry_allowed': False}
-    if (not _frame(frame) or type(expected_count) is not int or not 0 <= expected_count <= 4
+    if (not _frame(frame) or type(expected_count) is not int or not 0 <= expected_count <= 5
+            or (expected_count == 5 and target_cell is not None)
             or (target_cell is not None and (type(target_cell) is not int or not 1 <= target_cell <= 5))):
         return result('stop', 'invalid_surface_binding_or_scope')
     rows = frame.get('matches'); matches = {}
@@ -77,6 +78,8 @@ def inspect_surface(frame, expected_count, target_cell):
         return result('dismiss_shop', 'current_shop_and_own_preparation_control')
     if not evidence['fresh_count_matches'] or not _score(capacity, .97):
         return result('stop', 'uncovered_current_population_or_capacity_unknown')
+    if expected_count == 5:
+        return result('full_queue_observed', 'current_uncovered_five_of_five_no_additional_deployment')
     if target_cell is not None:
         cells = v.get('cells')
         found = [row.get('score') for row in cells if isinstance(row, dict) and type(row.get('id')) is int

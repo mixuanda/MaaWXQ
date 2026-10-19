@@ -27,6 +27,7 @@ def talent_layout(frame):
         banks.append(bank)
     families = [('legacy', banks[0], ['talent_footer_' + str(i) for i in range(1, 4)]),
                 ('current', banks[1], ['current_talent_footer_' + str(i) for i in range(3)]),
+                ('reviewed', banks[1], ['reviewed_talent_footer_' + str(i) for i in range(3)]),
                 ('gold', banks[1], ['gold_talent_footer_' + str(i) for i in range(3)])]
     full = [name for name, bank, keys in families if all(bank.get(key, -1) >= .97 for key in keys)]
     if full:

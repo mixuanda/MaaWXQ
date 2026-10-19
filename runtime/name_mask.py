@@ -35,7 +35,7 @@ def population_template_gate(rows, *, expected_count, capacity_score):
     This is a template gate, not independent numeric recognition or a dispatch
     decision. A successful name match never substitutes for these measurements.
     """
-    if (type(expected_count) is not int or not 0 <= expected_count <= 4
+    if (type(expected_count) is not int or not 0 <= expected_count <= 5
             or not _number(capacity_score, .97) or not isinstance(rows, list) or not 1 <= len(rows) <= 9):
         return False
     values = set()
