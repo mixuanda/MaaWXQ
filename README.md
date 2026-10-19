@@ -2,6 +2,11 @@
 
 An experimental Windows observation and strategy-assistance prototype for **Wangzhe Wanxiangqi (王者万象棋)**, starting with the **Yixing chess player (棋手弈星)**.
 
+The [demand-first lineup API](docs/LINEUP_DEMAND_API.md) selects supplied targets
+before buying, protects leveling/copy funds, and bounds refreshes. It reuses the
+Advisor's observed state and opponent history; it contains no fixed meta lineup,
+invented shop odds or input executor.
+
 **Status: offline advisory strategy core and capture/backend prototypes under validation.** T1 adds target identity, bounded workers and an optional pinned MaaFramework WGC adapter. Native WGC/game validation is paused at the user's request; no successful real-game WGC frame is claimed. The strategy core uses synthetic tests and an empty/unverified gameplay registry. There is no OCR, verified Yixing gameplay policy, input controller, or autonomous match play yet.
 
 **Sources and licenses:** read [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the verified upstream licenses, actual reference/dependency use, optional runtime contents and unresolved binary-release requirements. MaaWXQ's own license is still undecided; public visibility alone does not grant an open-source license.

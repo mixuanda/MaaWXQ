@@ -141,6 +141,21 @@ class Advisor:
                 "expires_at": intent.expires_at.isoformat() if intent else None,
                 "reasons": list(reasons)}
 
+    def advise_lineup(self, plans, *, decision_at, spending, upgrades=(), opponent_id=None):
+        """Demand-first real-data planning; no synthetic-world combat assumptions.
+
+        The BoardState producer projects observed fields through observe(). This
+        returns a lineup/buy/refresh suggestion, never an executable proposal.
+        """
+        from .lineup import advise_lineup
+        at = _time(decision_at)
+        if self._invalidation_reason:
+            return {'action': 'hold', 'reasons': ['fresh_recognition_required'], 'execution_allowed': False}
+        if self._state.evidence_watermark is not None and at < self._state.evidence_watermark:
+            raise ValueError('live cutoff precedes current evidence')
+        return advise_lineup(self._state, plans, now=at, spending=spending, upgrades=upgrades,
+                             opponent_id=opponent_id, policy=self._configured[2])
+
     def handle(self, command):
         """Handle one JSON transport command; exceptions leave input disabled."""
         if not isinstance(command, dict):
