@@ -62,13 +62,13 @@ class EconomyUI:
             # hero level, card tier and the upgrade cost do not match a scalar.
             match = re.fullmatch(reader.get('pattern', r'(?P<value>\d{1,2})'), value)
             if (scores.get(reader['anchor_id'],0)>=.97 and match and 'value' in match.re.groupindex
-                    and re.fullmatch(r'\d{1,2}', match['value']) and 1 <= int(match['value']) <= 99):
+                    and match['value'] is not None and re.fullmatch(r'\d{1,2}', match['value']) and 1 <= int(match['value']) <= 99):
                 out[key]=dict(shared,value=int(match['value']),semantic_source=reader['semantic_source'])
         quotes = {}
         for key, reader in self.profile.get('quote_readers', {}).items():
             match = re.fullmatch(reader['pattern'], compact(text.get(reader['text_key'], '')))
             if (scores.get(reader['anchor_id'], 0) >= .97 and match
-                    and re.fullmatch(r'\d{1,3}', match['value'])):
+                    and match['value'] is not None and re.fullmatch(r'\d{1,3}', match['value'])):
                 quotes[key] = dict(shared, value=int(match['value']), semantic_source=reader['semantic_source'])
         def enabled(name):
             button = self.profile.get('actions', {}).get(name, {})
@@ -94,7 +94,8 @@ class EconomyUI:
         upgrade=re.fullmatch(r'(\d{1,3})升级',compact(text.get('upgrade_button','')))
         if upgrade and scores.get('economy_upgrade_label',0)>=.97:
             out['level_up_cost']=dict(shared,value=int(upgrade[1]),semantic_source='current upgrade button cost')
-            if all(key in out for key in ('player_level','level_up_target_level')):
+            if (all(key in out for key in ('player_level','level_up_target_level'))
+                    and out['level_up_target_level']['value'] > out['player_level']['value']):
                 button=enabled('level_up')
                 if button: out['actions']['level_up']=bind(button)
         if 'level_up_cost' in quotes:
